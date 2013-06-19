@@ -4,13 +4,13 @@
 
 <!--Sales Menus-->
         <menuitem 
-            name="Cities" 
+            name="Ciudades" 
             id="menu_country_city_partner" 
             action="action_city" 
             parent="base.menu_localisation"/>
         
         <menuitem 
-            name="Sector and Parish" 
+            name="Sector y Parroquia" 
             id="menu_country_sector_partner" 
             action="action_sector" 
             parent="base.menu_localisation"/>                       

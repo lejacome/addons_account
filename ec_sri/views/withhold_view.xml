@@ -173,7 +173,7 @@
 		</record>
 
 		<menuitem name="Withhold of Sales" id="retentions_sales"
-			parent="ecua_documentos_sri.sri_menu" action="action_account_retention_sale" />
+			parent="ec_sri.sri_menu" action="action_account_retention_sale" />
 
 		<record model="ir.actions.act_window" id="action_account_retention_purchase">
 			<field name="name">Withhold of Purchases</field>
@@ -199,7 +199,7 @@
 		</record>
 
 		<menuitem name="Withhold of Purchases" id="retentions_purchases"
-			parent="ecua_documentos_sri.sri_menu" action="action_account_retention_purchase" />
+			parent="ec_sri.sri_menu" action="action_account_retention_purchase" />
 
 		<record model="ir.ui.view" id="retention_line_form_view">
 			<field name="name">account.retention.line.form</field>
@@ -303,7 +303,7 @@
 		</record>
 
 		<menuitem id="account_retention_line_menu" name="Retentions in Purchases Lines"
-			parent="ecua_documentos_sri.sri_menu" action="action_account_retention_line_tree_view" />
+			parent="ec_sri.sri_menu" action="action_account_retention_line_tree_view" />
 
 	</data>
 </openerp>

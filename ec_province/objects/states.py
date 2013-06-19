@@ -26,10 +26,10 @@ from osv import osv, fields
 
 class region(osv.osv):
     _name = 'res.region'
-    _description = 'region'
+    _description = 'Region'
     _columns = {
-        'name': fields.char('region Name', size=64,
-            help='The full name of the region.', required=True, translate=True),
+        'name': fields.char('Nombre Región', size=64,
+            help='Nombre completo de la región.', required=True, translate=True),
         'code': fields.char('region Code', size=2,
             help='The Region code in two chars.\n'
             'You can use this field for quick search.', required=True),
@@ -75,9 +75,9 @@ class regionZone(osv.osv):
     _description='res.region.state'
     _name = 'res.region.state'
     _columns = {
-        'region_id': fields.many2one('res.region', 'region',required=True),
-        'name': fields.char('Zone Name', size=64,required=True),
-        'code': fields.char('Zone Code', size=10,help='The zone code in max ten chars.\n', required=True),
+        'region_id': fields.many2one('res.region', 'Región',required=True),
+        'name': fields.char('Nombre', size=64,required=True),
+        'code': fields.char('Código', size=10,help='El código de la zona debe tener máximo 10 caracteres.\n', required=True),
     }
     def name_search(self, cr, user, name='', args=None, operator='ilike',
             context=None, limit=100):
@@ -107,8 +107,8 @@ regionZone()
 class CountryState(osv.osv):
     _inherit = 'res.country.state'
     _columns = {
-        'city_ids': fields.one2many('city.city', 'state_id', 'Cities'),
-        'region_id': fields.many2one('res.region', 'Region'),
+        'city_ids': fields.one2many('city.city', 'state_id', 'Ciudades'),
+        'region_id': fields.many2one('res.region', 'Región'),
     }
 CountryState()
 
@@ -146,10 +146,10 @@ class city(osv.osv):
     _name = 'city.city'
     _description = 'City'
     _columns = {
-        'state_id': fields.many2one('res.country.state', 'State', required=True, select=1),
-        'region_id': fields.many2one('res.region.state', 'Region', select=1),
+        'state_id': fields.many2one('res.country.state', 'Provincia', required=True, select=1),
+        'region_id': fields.many2one('res.region.state', 'Región', select=1),
         'name': fields.char('City', size=64, required=True, select=1),
-        'sector_id': fields.one2many('res.partner.parish','name', 'Sector and Parish'),
+        'sector_id': fields.one2many('res.partner.parish','name', 'Sector y Parroquia'),
         'zipcode': fields.char('ZIP', size=64, required=True, select=1),
         'parroquia_ids':fields.one2many('res.parroquia', 'city_id', 'Parroquias', required=False), 
         
@@ -170,8 +170,8 @@ class res_partner_sector(osv.osv):
 
 res_partner_sector()
 
-class res_partner_address(osv.osv): 
-    _inherit = "res.partner.address"
+class res_partner(osv.osv): 
+    _inherit = "res.partner"
 #    def _get_parroquia(self, cr, uid, ids, field_name, arg, context):
 #        res={}
 #        for obj in self.browse(cr,uid,ids):
@@ -320,15 +320,15 @@ class res_partner_address(osv.osv):
         return new_args
 
     _columns = {
-        'location': fields.many2one('city.city', 'Location'),
+        'location': fields.many2one('city.city', 'Ubicación'),
         'phone2':fields.char('Phone 2',size=13),
         'sector': fields.char('Sector',size=150),
         'parish': fields.char('Parish',size=150),
         'zip': fields.function(_get_zip, fnct_search=_zip_search, method=True, type="char", string='Zip', size=24),
-        'city': fields.function(_get_city, fnct_search=_city_search, method=True, type="char", string='City', size=128, store=True),
+        'city': fields.function(_get_city, fnct_search=_city_search, method=True, type="char", string='Ciudad', size=128, store=True),
         'region_id': fields.function(_get_region, fnct_search=_region_id_search, obj="res.region.state", method=True, type="many2one", string='Region', store=True), 
-        'state_id': fields.function(_get_state, fnct_search=_state_id_search, obj="res.country.state", method=True, type="many2one", string='State', store=True), 
-        'country_id': fields.function(_get_country, fnct_search=_country_id_search, obj="res.country" ,method=True, type="many2one", string='Country', store=True),
+        'state_id': fields.function(_get_state, fnct_search=_state_id_search, obj="res.country.state", method=True, type="many2one", string='Provincia', store=True), 
+        'country_id': fields.function(_get_country, fnct_search=_country_id_search, obj="res.country" ,method=True, type="many2one", string='Pais', store=True),
         'parroquia_id':fields.many2one('res.parroquia', 'Parroquia', required=False),  
     }
     
@@ -355,7 +355,7 @@ class res_partner_address(osv.osv):
                           'parroquia_id': None,
                           })
         return {'value': value, 'domain': domain }
-res_partner_address()
+res_partner()
 
 
 class res_parroquia(osv.osv):
