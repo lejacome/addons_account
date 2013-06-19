@@ -1,0 +1,294 @@
+<?xml version="1.0"?>
+<openerp>
+	<data>
+<!-- ##########################Nota de Crédito############################ -->
+ <!--  Nota de Crédito TREE-->    
+    <record model="ir.ui.view" id="view_ecua_ndc_tree">
+        <field name="name">ecua.ndc.tree.view</field>
+        <field name="type">tree</field>
+        <field name="model">ecua.ndc</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <tree string="Notas">
+            <field name="doc_number" string="Num. Nota de crédito"/>
+            <field name="denominacion"/>
+            <field name="num_comprob_venta" string="Doc. Modificado"/>
+            <field name="fecha_emision" string="Fecha emisión"/>
+            <field name="num_atoriza" string="Autorización" />
+            <field name="autoriza_date_emision" string="Emitido"/>
+            <field name="autoriza_date_expire" string="Expira"/>
+            <field name="ndc_concept"/>
+       </tree>
+       </field>
+    </record>
+ <!--  Nota de Crédito FORM-->
+    <record model="ir.ui.view" id="view_ecua_ndc_form">
+        <field name="name">ecua.ndc.form.view</field>
+        <field name="type">form</field>
+        <field name="model">ecua.ndc</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <form string="Nota">
+        			<group colspan="3" col="2">
+        					<field name="nom_comercial" readonly="1"/>
+        					<field name="razon_social" string="Razón Social" readonly="1"/>
+        					<field name="dir_matriz" string="Dirección matriz" readonly="1"/>
+        					<field name="dir_sucursal" string="Dirección sucursal" readonly="1"/>	
+        					<field name="ejercicio_fiscal" readonly="1"/> 			
+        			</group>
+        			<group colspan="1" col="2">
+        					<field name="ruc" string="RUC" readonly="1"/>
+        					<field name="denominacion" string="Denominación" readonly="1"/>
+        					<field name="doc_number" on_change="onchange_data(doc_number, shop_id, fecha_emision)" string="Doc. Número" select="1"/>		
+        					<field name="num_atoriza" string="Autorización" select="2" readonly="1"/>	
+        					<field name="autoriza_date_emision" string="Fecha autorizacón" readonly="1"/>			
+        			</group>
+                    <field name="tipo_comprob_venta" select="2"/>
+                    <field name="shop_id" invisible="1"/>
+                    <field name="company_id" invisible="1" />
+                    <field name="journal_id" select="2"/>                    
+                    <newline/>
+                    <field name="num_comprob_venta" on_change="onChange_comprobante(num_comprob_venta)" select="2" colspan="4" string="Número"/>       		
+                    <field name="customer_name" select="2"/>
+                    <field name="fecha_emision" string="Fecha emisión"/>
+                    <field name="customer_ruc" select="2" />
+                    <field name="customer_dir" string="Dirección" select="2" />                    
+                    <field name="ndc_concept"/>
+		            
+		            <newline/>
+		            <field name="ndc_line_ids" colspan="4" default_get="{'ejercicio_fiscal': ejercicio_fiscal}" string="Detalle">
+                                <tree string="Lineas-Nota de Crédito" editable="bottom">
+                                   <field name="motivo_modifica"/>
+                                   <field name="valor_modifica"/>
+                               </tree> 
+                    </field>
+                    <group colspan="3" col="2">
+                    	<field name="autoriza_date_expire" string="Expira"/>
+                    </group>
+                    <group colspan="1" col="2">
+                    	<field name="iva12" string="IVA(12)"/>
+                    	<field name="iva0" string="IVA(0)"/>
+                    	<field name="valor_total" string="Total"/>
+                    </group>                   
+         </form>
+       </field>
+    </record>
+ <!--  Nota de Crédito ACTION-->
+    <record model="ir.actions.act_window" id="action_ecua_ndc_list">
+        <field name="name">Notas crédito</field>
+        <field name="res_model">ecua.ndc</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+    </record>
+ <!--  Nota de Crédito ACTION-->
+    <record model="ir.actions.act_window" id="action_ecua_ndc_new_form">
+        <field name="name">Notas crédito</field>
+        <field name="res_model">ecua.ndc</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+    </record>  
+  <!-- Nota de Crédito MENU-->   
+    <menuitem parent="account.menu_finance_receivables" id="menu_ecua_ndc" action="action_ecua_ndc_list" />
+ <!-- ##########################Nota de Crédito END############################ -->   
+ 
+ <!-- ##########################Nota de Débito############################ -->
+ <!--  Nota de Débito TREE-->    
+    <record model="ir.ui.view" id="view_ecua_ndd_tree">
+        <field name="name">ecua.ndd.tree.view</field>
+        <field name="type">tree</field>
+        <field name="model">ecua.ndd</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <tree string="Notas">
+            <field name="doc_number" string="Num. Nota de débito"/>
+            <field name="denominacion"/>
+            <field name="num_comprob_venta" string="Doc. Modificado"/>
+            <field name="fecha_emision" string="Fecha emisión"/>
+            <field name="num_atoriza" string="Autorización" />
+            <field name="autoriza_date_emision" string="Emitido"/>
+            <field name="autoriza_date_expire" string="Expira"/>
+            <field name="ndd_concept"/>
+       </tree>
+       </field>
+    </record>
+ <!--  Nota de Débito FORM-->
+    <record model="ir.ui.view" id="view_ecua_ndd_form">
+        <field name="name">ecua.ndd.form.view</field>
+        <field name="type">form</field>
+        <field name="model">ecua.ndd</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <form string="Nota">
+        			<group colspan="3" col="2">
+        					<field name="nom_comercial" readonly="1"/>
+        					<field name="razon_social" string="Razón Social" readonly="1"/>
+        					<field name="dir_matriz" string="Dirección matriz" readonly="1"/>
+        					<field name="dir_sucursal" string="Dirección sucursal" readonly="1"/>	
+        					<field name="ejercicio_fiscal" readonly="1"/> 		
+        			</group>
+        			<group colspan="1" col="2">
+        					<field name="ruc" string="RUC" readonly="1"/>
+        					<field name="denominacion" string="Denominación" readonly="1"/>
+        					<field name="doc_number" on_change="onchange_data(doc_number, shop_id, fecha_emision)" string="Doc. Número" select="1"/>		
+        					<field name="num_atoriza" string="Autorización" select="2" readonly="1"/>	
+        					<field name="autoriza_date_emision" string="Fecha autorizacón" readonly="1"/>			
+        			</group>
+                    <field name="tipo_comprob_venta" select="2"/>
+                    <field name="shop_id" invisible="1"/>
+                    <field name="company_id" invisible="1" />
+                    <field name="journal_id" select="2"/> 
+                    <newline/>
+                    <field name="num_comprob_venta" on_change="onChange_comprobante(num_comprob_venta)" select="2" colspan="4" string="Número"/>        		
+                    <field name="customer_name" select="2"/>
+                    <field name="fecha_emision" string="Fecha emisión"/>
+                    <field name="customer_ruc" select="2" />
+                    <field name="customer_dir" string="Dirección" select="2" />                    
+                    <field name="ndd_concept"/>
+		            
+		            <newline/>
+		            <field name="ndd_line_ids" colspan="4" default_get="{'ejercicio_fiscal': ejercicio_fiscal}" string="Detalle">
+                                <tree string="Lineas-Nota de Débito" editable="bottom">
+                                   <field name="motivo_modifica"/>
+                                   <field name="valor_modifica"/>
+                               </tree> 
+                    </field>
+                    <group colspan="3" col="2">
+                    	<field name="autoriza_date_expire" string="Expira"/>
+                    </group>
+                    <group colspan="1" col="2">
+                    	<field name="iva12" string="IVA(12)"/>
+                    	<field name="iva0" string="IVA(0)"/>
+                    	<field name="valor_total" string="Total"/>
+                    </group>       
+         </form>
+       </field>
+    </record>
+ <!--  Nota de Débito ACTION-->
+    <record model="ir.actions.act_window" id="action_ecua_ndd_list">
+        <field name="name">Notas Débito</field>
+        <field name="res_model">ecua.ndd</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+    </record>
+ <!--  Nota de Débito ACTION-->
+    <record model="ir.actions.act_window" id="action_ecua_ndd_new_form">
+        <field name="name">Notas Débito</field>
+        <field name="res_model">ecua.ndd</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+    </record>  
+  <!-- Nota de Débito MENU-->   
+    <menuitem parent="account.menu_finance_receivables" id="menu_ecua_ndd" action="action_ecua_ndd_list" />
+ <!-- ##########################Nota de Débito END############################ -->
+ 
+ <!-- ##########################Retenciones############################ -->
+ <!--  Retenciones TREE-->    
+    <record model="ir.ui.view" id="view_ecua_retencion_tree">
+        <field name="name">ecua.retencion.tree.view</field>
+        <field name="type">tree</field>
+        <field name="model">ecua.retencion</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <tree string="Notas">
+            <field name="doc_number" string="Num. Retención"/>
+            <field name="denominacion"/>
+            <field name="num_comprob_venta" string="Doc. Modificado"/>
+            <field name="fecha_emision" string="Fecha emisión"/>
+            <field name="num_atoriza" string="Autorización" />
+            <field name="autoriza_date_emision" string="Emitido"/>
+            <field name="autoriza_date_expire" string="Expira"/>
+            <field name="retencion_concept"/>
+       </tree>
+       </field>
+    </record>
+ <!--  Retenciones FORM-->
+    <record model="ir.ui.view" id="view_ecua_retencion_form">
+        <field name="name">ecua.retencion.form.view</field>
+        <field name="type">form</field>
+        <field name="model">ecua.retencion</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <form string="Retención">
+        			<group colspan="3" col="2">
+        					<field name="nom_comercial" readonly="1"/>
+        					<field name="razon_social" string="Razón Social" readonly="1"/>
+        					<field name="dir_matriz" string="Dirección matriz" readonly="1"/>
+        					<field name="dir_sucursal" string="Dirección sucursal" readonly="1"/>
+        					<field name="ejercicio_fiscal" readonly="1"/> 			
+        			</group>
+        			<group colspan="1" col="2">
+        					<field name="ruc" string="RUC" readonly="1"/>
+        					<field name="denominacion" string="Denominación" readonly="1"/>
+        					<field name="doc_number" on_change="onchange_data(doc_number, shop_id, fecha_emision)" string="Doc. Número" select="1"/>		
+        					<field name="num_atoriza" string="Autorización" select="2" readonly="1"/>	
+        					<field name="autoriza_date_emision" string="Fecha autorizacón" readonly="1"/>			
+        			</group>
+                    <field name="tipo_comprob_venta" select="2"/>
+                    <field name="shop_id" invisible="1"/>
+                    <field name="company_id" invisible="1" />
+                    <field name="journal_id" select="2"/> 
+                    <newline/>
+                    <field name="num_comprob_venta" on_change="onChange_comprobante(num_comprob_venta)" select="2" colspan="4" string="Número"/>                           		
+                    <field name="customer_name" select="2"/>
+                    <field name="fecha_emision" string="Fecha emisión"/>
+                    <field name="customer_ruc" select="2"/>
+                    <field name="customer_dir" string="Dirección" select="2" />                    
+		            
+		            <newline/>
+		            <field name="retencion_line_ids" colspan="4" default_get="{'ejercicio_fiscal': ejercicio_fiscal}" string="Detalle">
+                               <tree string="Voucher Items" editable="bottom">
+                                   <field name="ejercicio_fiscal"/>
+                                   <field name="base_imponible"/>
+                                   <field name="impuesto_id"/>
+                                   <field name="porcentaje"/>
+                               </tree>
+                    </field>
+                    <group colspan="3" col="2">
+                    	<field name="autoriza_date_expire" string="Expira"/>
+                    </group>
+                    <group colspan="1" col="2">
+                    	<field name="valor_retenido"/>
+                    </group>
+         </form>
+       </field>
+    </record>
+ <!--  Retenciones ACTION-->
+    <record model="ir.actions.act_window" id="action_ecua_retencion_list">
+        <field name="name">Retenciones</field>
+        <field name="res_model">ecua.retencion</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+    </record>
+ <!--  Retenciones ACTION-->
+    <record model="ir.actions.act_window" id="action_ecua_retencion_new_form">
+        <field name="name">Retenciones</field>
+        <field name="res_model">ecua.retencion</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+    </record>  
+  <!-- Retenciones MENU-->   
+    <menuitem parent="account.menu_finance_receivables" id="menu_ecua_retencion" action="action_ecua_retencion_list" />
+ <!-- ##########################Retenciones END############################ --> 
+ 
+ <!-- ##########################Lineas de Retenciones############################ -->
+ <!--  Lineas de Retenciones TREE-->    
+    <record model="ir.ui.view" id="view_ecua_retencion_line_tree">
+        <field name="name">ecua.retencion_line.tree.view</field>
+        <field name="type">tree</field>
+        <field name="model">ecua.retencion_line</field>
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+        <tree string="Lineas de la retencion" editable="bottom" >
+            <field name="ejercicio_fiscal"/>
+            <field name="base_imponible"/>
+            <field name="impuesto_id"/>
+            <field name="porcentaje"/>
+       </tree>
+       </field>
+    </record>
+<!-- ##########################Lineas de Retenciones END############################ --> 
+  </data>
+</openerp>

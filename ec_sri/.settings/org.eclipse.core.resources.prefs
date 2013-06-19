@@ -1,0 +1,24 @@
+#Mon Apr 01 15:46:18 ECT 2013
+eclipse.preferences.version=1
+encoding//objects/__init__.py=utf-8
+encoding//objects/authorization.py=utf-8
+encoding//objects/company.py=utf-8
+encoding//objects/delivery_note.py=utf-8
+encoding//objects/document.py=utf-8
+encoding//objects/invoice.py=utf-8
+encoding//objects/invoice_taxes.py=utf-8
+encoding//objects/journal.py=utf-8
+encoding//objects/move.py=utf-8
+encoding//objects/move_line.py=utf-8
+encoding//objects/picking.py=utf-8
+encoding//objects/purchase_order.py=utf-8
+encoding//objects/sale_order.py=utf-8
+encoding//objects/shop.py=utf-8
+encoding//objects/user.py=utf-8
+encoding//objects/withhold.py=utf-8
+encoding//wizard/__init__.py=utf-8
+encoding//wizard/authorization_wizard.py=utf-8
+encoding//wizard/invoice_print_wizard.py=utf-8
+encoding//wizard/stock_partial_picking.py=utf-8
+encoding/__init__.py=utf-8
+encoding/__openerp__.py=utf-8

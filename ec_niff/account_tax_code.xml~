@@ -1,0 +1,850 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<openerp>
+  <data>
+
+    <record model="account.tax.code.template" id="vat_code_tax">
+        <field name="name">Tax</field>
+    </record>
+    
+    <record model="account.tax.code.template" id="vat_code_balance_net">
+        <field name="name">Tax Balance to Pay</field>
+        <field name="parent_id" ref="vat_code_tax"/>
+    </record>
+
+    <record model="account.tax.code.template" id="vat_code_due_tva">
+        <field name="name">Tax Due (Tax to pay)</field>
+        <field name="parent_id" ref="vat_code_balance_net"/>
+    </record>
+
+    <record model="account.tax.code.template" id="vat_code_payable">
+        <field name="name">Tax Payable</field>
+        <field name="parent_id" ref="vat_code_balance_net"/>
+    </record>
+
+    <record model="account.tax.code.template" id="vat_code_base_net">
+        <field name="name">Tax Bases</field>
+        <field name="parent_id" ref="vat_code_tax"/>
+    </record>
+
+
+    <record model="account.tax.code.template" id="vat_code_base_due">
+        <field name="name">Base of Taxed Sales</field>
+        <field name="parent_id" ref="vat_code_base_net"/>
+    </record>
+
+
+    <record model="account.tax.code.template" id="vat_code_receivable_net">
+        <field name="name">Base of Taxed Purchases</field>
+        <field name="parent_id" ref="vat_code_base_net"/>
+    </record>
+
+
+
+<!-- 103 -->
+
+		<!--record id="tax103" model="account.tax.code.template">
+			<field name="name">DECLARACIÓN DE RETENCIONES EN LA FUENTE DEL IMPUESTO A LA RENTA</field>
+			<field name="code">103</field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="vat_code_tax"/>
+		</record>
+
+		<record id="103_base" model="account.tax.code.template">
+			<field name="name">POR PAGOS EFECTUADOS EN EL PAÍS</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax103"/>
+		</record>
+		
+		<record id="tax349" model="account.tax.code.template">
+			<field name="name">BASE IMPONIBLE</field>
+			<field name="code">349</field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="103_base"/>
+		</record>
+		
+		<record id="tax302" model="account.tax.code.template">
+			<field name="name">EN RELACIÓN DE DEPENDENCIA QUE SUPERA O NO LA BASE DESGRAVADA</field>
+			<field name="code">302</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+		</record>
+		
+		<record id="tax303" model="account.tax.code.template">
+			<field name="name">SERVICIOS HONORARIOS PROFESIONALES</field>
+			<field name="code">303</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+		</record>
+
+		<record id="tax304" model="account.tax.code.template">
+			<field name="name">SERVICIOS PREDOMINA EL INTELECTO</field>
+			<field name="code">304</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+		</record>
+
+		<record id="tax307" model="account.tax.code.template">
+			<field name="name">SERVICIOS PREDOMINA MANO DE OBRA</field>
+			<field name="code">307</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+		<record id="tax308" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS ENTRE SOCIEDADES</field>
+			<field name="code">308</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+		<record id="tax309" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS PUBLICIDAD Y COMUNICACIÓN</field>
+			<field name="code">309</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+		<record id="tax310" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS TRANSPORTE PRIVADO DE PASAJEROS O SERVICIO PÚBLICO O PRIVADO DE CARGA</field>
+			<field name="code">310</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+		<record id="tax312" model="account.tax.code.template">
+			
+			<field name="name">TRANSFERENCIA DE BIENES MUEBLES DE NATURALEZA CORPORAL</field>
+			<field name="code">312</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+
+		<record id="tax319" model="account.tax.code.template">
+			
+			<field name="name">ARRENDAMIENTO MERCANTIL</field>
+			<field name="code">319</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+		<record id="tax320" model="account.tax.code.template">
+			
+			<field name="name">ARRENDAMIENTO BIENES INMUEBLES</field>
+			<field name="code">320</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+
+		<record id="tax322" model="account.tax.code.template">
+			
+			<field name="name">SEGUROS Y REASEGUROS (PRIMAS Y CESIONES)</field>
+			<field name="code">322</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax323" model="account.tax.code.template">
+			
+			<field name="name">RENDIMIENTOS FINANCIEROS</field>
+			<field name="code">323</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax325" model="account.tax.code.template">
+			
+			<field name="name">LOTERÍAS, RIFAS, APUESTAS Y SIMILARES</field>
+			<field name="code">325</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax327" model="account.tax.code.template">
+			
+			<field name="name">VENTA DE COMBUSTIBLES A COMERCIALIZADORAS</field>
+			<field name="code">327</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax328" model="account.tax.code.template">
+			
+			<field name="name">VENTA DE COMBUSTIBLES A DISTRIBUIDORES</field>
+			<field name="code">328</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax332" model="account.tax.code.template">
+			
+			<field name="name">PAGOS DE BIENES O SERVICIOS NO SUJETOS A RETENCIÓN</field>
+			<field name="code">332</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax340" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 1%</field>
+			<field name="code">340</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax341" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 2%</field>
+			<field name="code">341</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax342" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 8%</field>
+			<field name="code">342</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+			
+		</record>
+		
+		<record id="tax343" model="account.tax.code.template">
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 25%</field>
+			<field name="code">343</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+		</record>
+		
+		<record id="tax344" model="account.tax.code.template">
+			<field name="name">OTRAS RETENCIONES APLICABLES A OTROS PORCENTAJES</field>
+			<field name="code">344</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax349"/>
+		</record>
+
+		<record id="tax399" model="account.tax.code.template">
+			<field name="name">VALOR RETENIDO</field>
+			<field name="code">399</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="103_base"/>
+		</record>
+		
+		<record id="tax352" model="account.tax.code.template">
+			
+			<field name="name">EN RELACIÓN DE DEPENDENCIA QUE SUPERA O NO LA BASE DESGRAVADA</field>
+			<field name="code">352</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax353" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS HONORARIOS PROFESIONALES</field>
+			<field name="code">353</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax354" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS PREDOMINA EL INTELECTO</field>
+			<field name="code">354</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax357" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS PREDOMINA MANO DE OBRA</field>
+			<field name="code">357</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax358" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS ENTRE SOCIEDADES</field>
+			<field name="code">358</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax359" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS PUBLICIDAD Y COMUNICACIÓN</field>
+			<field name="code">359</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax360" model="account.tax.code.template">
+			
+			<field name="name">SERVICIOS TRANSPORTE PRIVADO DE PASAJEROS O SERVICIO PÚBLICO O PRIVADO DE CARGA</field>
+			<field name="code">360</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax362" model="account.tax.code.template">
+			
+			<field name="name">TRANSFERENCIA DE BIENES MUEBLES DE NATURALEZA CORPORAL</field>
+			<field name="code">362</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+
+		<record id="tax369" model="account.tax.code.template">
+			
+			<field name="name">ARRENDAMIENTO MERCANTIL</field>
+			<field name="code">369</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax370" model="account.tax.code.template">
+			
+			<field name="name">ARRENDAMIENTO BIENES INMUEBLES</field>
+			<field name="code">370</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="tax372" model="account.tax.code.template">
+			
+			<field name="name">SEGUROS Y REASEGUROS (PRIMAS Y CESIONES)</field>
+			<field name="code">372</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax373" model="account.tax.code.template">
+			
+			<field name="name">RENDIMIENTOS FINANCIEROS</field>
+			<field name="code">373</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax375" model="account.tax.code.template">
+			
+			<field name="name">LOTERÍAS, RIFAS, APUESTAS Y SIMILARES</field>
+			<field name="code">375</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax377" model="account.tax.code.template">
+			
+			<field name="name">VENTA DE COMBUSTIBLES A COMERCIALIZADORAS</field>
+			<field name="code">377</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax378" model="account.tax.code.template">
+			
+			<field name="name">VENTA DE COMBUSTIBLES A DISTRIBUIDORES</field>
+			<field name="code">378</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax390" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 1%</field>
+			<field name="code">390</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax391" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 2%</field>
+			<field name="code">391</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax392" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 8%</field>
+			<field name="code">392</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax393" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES EL 25%</field>
+			<field name="code">393</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+		
+		<record id="tax394" model="account.tax.code.template">
+			
+			<field name="name">OTRAS RETENCIONES APLICABLES A OTROS PORCENTAJES</field>
+			<field name="code">394</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax399"/>
+			
+		</record>
+
+		<record id="103_base2" model="account.tax.code.template">
+			
+			<field name="name">POR PAGOS AL EXTERIOR</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax103"/>
+			
+		</record>
+
+		<record id="tax429" model="account.tax.code.template">
+			
+			<field name="name">BASE IMPONIBLE</field>
+			<field name="code">429</field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="103_base2"/>
+			
+		</record>
+
+		<record id="tax401" model="account.tax.code.template">
+			
+			<field name="name">CON CONVENIO DE DOBLE TRIBUTACIÓN</field>
+			<field name="code">401</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax429"/>
+			
+		</record>
+
+		<record id="tax403" model="account.tax.code.template">
+			
+			<field name="name">SIN CONVENIO DE DOBLE TRIBUTACIÓN INTERESES POR FINANCIAMIENTO DE PROVEEDORES EXTERNOS</field>
+			<field name="code">403</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax429"/>
+			
+		</record>
+
+		<record id="tax405" model="account.tax.code.template">
+			
+			<field name="name">SIN CONVENIO DE DOBLE TRIBUTACIÓN INTERESES DE CRÉDITOS EXTERNOS</field>
+			<field name="code">405</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax429"/>
+			
+		</record>
+
+		<record id="tax421" model="account.tax.code.template">
+			
+			<field name="name">SIN CONVENIO DE DOBLE TRIBUTACIÓN OTROS CONCEPTOS</field>
+			<field name="code">421</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax429"/>
+			
+		</record>
+
+		<record id="tax427" model="account.tax.code.template">
+			
+			<field name="name">CON CONVENIO DE DOBLE TRIBUTACIÓN PAGOS AL EXTERIOR  NO SUJETOS A RETENCIÓN</field>
+			<field name="code">427</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax429"/>
+			
+		</record>
+
+		<record id="tax498" model="account.tax.code.template">
+			
+			<field name="name">VALOR RETENIDO</field>
+			<field name="code">498</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="103_base2"/>
+			
+		</record>
+
+		<record id="tax451" model="account.tax.code.template">
+			
+			<field name="name">CON CONVENIO DE DOBLE TRIBUTACIÓN</field>
+			<field name="code">401</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax498"/>
+			
+		</record>
+
+		<record id="tax453" model="account.tax.code.template">
+			
+			<field name="name">SIN CONVENIO DE DOBLE TRIBUTACIÓN INTERESES POR FINANCIAMIENTO DE PROVEEDORES EXTERNOS</field>
+			<field name="code">403</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax498"/>
+			
+		</record>
+
+		<record id="tax455" model="account.tax.code.template">
+			
+			<field name="name">SIN CONVENIO DE DOBLE TRIBUTACIÓN INTERESES DE CRÉDITOS EXTERNOS</field>
+			<field name="code">405</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax498"/>
+			
+		</record>
+
+		<record id="tax471" model="account.tax.code.template">
+			
+			<field name="name">SIN CONVENIO DE DOBLE TRIBUTACIÓN OTROS CONCEPTOS</field>
+			<field name="code">421</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax498"/>
+			
+		</record-->
+
+<!-- 104 -->
+
+   <!--record id="tax104" model="account.tax.code.template">
+			
+			<field name="name">DECLARACIÓN DEL IMPUESTO AL VALOR AGREGADO</field>
+			<field name="code">104</field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="vat_code_tax"/>
+			<field name="type">normal</field>
+		</record>
+		
+		<record id="104_VENTAS" model="account.tax.code.template">
+			
+			<field name="name">RESUMEN DE VENTAS Y OTRAS OPERACIONES DEL PERÍODO QUE DECLARA</field>
+			<field name="code"></field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="tax104"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="104_COMPRAS" model="account.tax.code.template">
+			
+			<field name="name">RESUMEN DE ADQUISICIONES Y PAGOS DEL PERÍODO QUE DECLARA</field>
+			<field name="code"></field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="tax104"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax799" model="account.tax.code.template">
+			
+			<field name="name">TOTAL IMPUESTO A PAGAR POR RETENCIÓN</field>
+			<field name="code">799</field>
+			<field name="parent_id" ref="tax104"/>
+			<field name="sign">1</field>
+			<field name="type">withholding</field>
+		</record>
+		
+		<record id="tax419" model="account.tax.code.template">
+			
+			<field name="name">VALOR NETO (VALOR BRUTO - N/C)</field>
+			<field name="code">419</field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="104_VENTAS"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax411" model="account.tax.code.template">
+			
+			<field name="name">VENTAS LOCALES (EXCLUYE ACTIVOS FIJOS) GRAVADAS TARIFA 12%</field>
+			<field name="code">411</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax412" model="account.tax.code.template">
+			
+			<field name="name">VENTAS DE ACTIVOS FIJOS GRAVADAS TARIFA 12%</field>
+			<field name="code">412</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax413" model="account.tax.code.template">
+			
+			<field name="name">VENTAS LOCALES (EXCLUYE ACTIVOS FIJOS) GRAVADAS TARIFA 0% QUE NO DAN DERECHO A CREDITO TRIBUTARIO</field>
+			<field name="code">413</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax414" model="account.tax.code.template">
+			
+			<field name="name">VENTAS DE ACTIVOS FIJOS GRAVADAS TARIFA 0% QUE NO DAN DERECHO A CREDITO TRIBUTARIO</field>
+			<field name="code">414</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax415" model="account.tax.code.template">
+			
+			<field name="name">VENTAS LOCALES (EXCLUYE ACTIVOS FIJOS) GRAVADAS TARIFA 0% QUE DAN DERECHO A CREDITO TRIBUTARIO</field>
+			<field name="code">415</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax416" model="account.tax.code.template">
+			
+			<field name="name">VENTAS DE ACTIVOS FIJOS GRAVADAS TARIFA 0% QUE DAN DERECHO A CREDITO TRIBUTARIO</field>
+			<field name="code">416</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax417" model="account.tax.code.template">
+			
+			<field name="name">EXPORTACIONES DE BIENES</field>
+			<field name="code">417</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax418" model="account.tax.code.template">
+			
+			<field name="name">EXPORTACIONES DE SERVICIOS</field>
+			<field name="code">418</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax419"/>
+			<field name="type">normal</field>
+		</record>
+		
+		<record id="tax529" model="account.tax.code.template">
+			
+			<field name="name">IMPUESTO GENERADO</field>
+			<field name="code">529</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="104_VENTAS"/>
+			<field name="type">normal</field>
+		</record>
+		
+		<record id="IVA-421" model="account.tax.code.template">
+			
+			<field name="name">VENTAS LOCALES (EXCLUYE ACTIVOS FIJOS) GRAVADAS TARIFA 12%</field>
+			<field name="code">421</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax529"/>
+			<field name="type">normal</field>
+		</record>
+		
+		<record id="tax422" model="account.tax.code.template">
+			
+			<field name="name">VENTAS DE ACTIVOS FIJOS GRAVADAS TARIFA 12%</field>
+			<field name="code">422</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax529"/>
+			<field name="type">normal</field>
+		</record>
+		
+		
+		<record id="tax519" model="account.tax.code.template">
+			
+			<field name="name">VALOR NETO (VALOR BRUTO - N/C)</field>
+			<field name="code">519</field>
+			<field name="sign">0.0</field>
+			<field name="parent_id" ref="104_COMPRAS"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax511" model="account.tax.code.template">
+			
+			<field name="name">ADQUISICIONES Y PAGOS (EXCLUYE ACTIVOS FIJOS) GRAVADOS TARIFA 12% (CON DERECHO A CRÉDITO TRIBUTARIO)</field>
+			<field name="code">511</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax512" model="account.tax.code.template">
+			
+			<field name="name">ADQUISICIONES LOCALES DE ACTIVOS FIJOS GRAVADOS TARIFA 12% (CON DERECHO A CRÉDITO TRIBUTARIO)</field>
+			<field name="code">512</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax513" model="account.tax.code.template">
+			
+			<field name="name">OTRAS ADQUISICIONES Y PAGOS GRAVADOS TARIFA 12% (SIN DERECHO A CRÉDITO TRIBUTARIO)</field>
+			<field name="code">513</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax514" model="account.tax.code.template">
+			
+			<field name="name">IMPORTACIONES DE BIENES (EXCLUYE ACTIVOS FIJOS) GRAVADOS TARIFA 12%</field>
+			<field name="code">514</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax515" model="account.tax.code.template">
+			
+			<field name="name">IMPORTACIONES DE ACTIVOS FIJOS GRAVADOS TARIFA 12%</field>
+			<field name="code">515</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax516" model="account.tax.code.template">
+			
+			<field name="name">IMPORTACIONES DE BIENES (INCLUYE ACTIVOS FIJOS) GRAVADOS TARIFA 0%</field>
+			<field name="code">516</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax517" model="account.tax.code.template">
+			
+			<field name="name">ADQUISICIONES Y PAGOS (INCLUYE ACTIVOS FIJOS) GRAVADOS TARIFA 0%</field>
+			<field name="code">517</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax518" model="account.tax.code.template">
+			
+			<field name="name">ADQUISICIONES REALIZADAS A CONTRIBUYENTES RISE</field>
+			<field name="code">518</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>
+		
+		<record id="tax529" model="account.tax.code.template">
+			
+			<field name="name">IMPUESTO GENERADO</field>
+			<field name="code">529</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="104_COMPRAS"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax521" model="account.tax.code.template">
+			
+			<field name="name">ADQUISICIONES Y PAGOS (EXCLUYE ACTIVOS FIJOS) GRAVADOS TARIFA 12% (CON DERECHO A CRÉDITO TRIBUTARIO)</field>
+			<field name="code">521</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>
+
+		<record id="tax522" model="account.tax.code.template">
+			
+			<field name="name">ADQUISICIONES LOCALES DE ACTIVOS FIJOS GRAVADOS TARIFA 12% (CON DERECHO A CRÉDITO TRIBUTARIO)</field>
+			<field name="code">522</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax523" model="account.tax.code.template">
+			
+			<field name="name">OTRAS ADQUISICIONES Y PAGOS GRAVADOS TARIFA 12% (SIN DERECHO A CRÉDITO TRIBUTARIO)</field>
+			<field name="code">523</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax524" model="account.tax.code.template">
+			
+			<field name="name">IMPORTACIONES DE BIENES (EXCLUYE ACTIVOS FIJOS) GRAVADOS TARIFA 12%</field>
+			<field name="code">524</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>		
+
+		<record id="tax525" model="account.tax.code.template">
+			
+			<field name="name">IMPORTACIONES DE ACTIVOS FIJOS GRAVADOS TARIFA 12%</field>
+			<field name="code">525</field>
+			<field name="sign">1.0</field>
+			<field name="parent_id" ref="tax519"/>
+			<field name="type">normal</field>
+		</record>
+		
+		<record id="tax721" model="account.tax.code.template">
+			
+			<field name="name">RETENCIONES 30% IVA 721</field>
+			<field name="code">721</field>
+			<field name="parent_id" ref="tax799"/>
+			<field name="sign">1</field>
+			<field name="type">withholding</field>
+		</record>
+		
+		<record id="tax723" model="account.tax.code.template">
+			
+			<field name="name">RETENCIONES 70% IVA 723</field>
+			<field name="code">723</field>
+			<field name="parent_id" ref="tax799"/>
+			<field name="sign">1</field>
+			<field name="type">withholding</field>
+		</record>
+
+		<record id="tax725" model="account.tax.code.template">
+			
+			<field name="name">RETENCIONES 100% IVA 725</field>
+			<field name="code">725</field>
+			<field name="parent_id" ref="tax799"/>
+			<field name="sign">1</field>
+			<field name="type">withholding</field>
+		</record-->
+
+  </data>
+</openerp>

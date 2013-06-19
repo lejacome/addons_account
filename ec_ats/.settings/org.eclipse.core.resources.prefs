@@ -1,0 +1,16 @@
+eclipse.preferences.version=1
+encoding//objects/__init__.py=utf-8
+encoding//objects/codigo_regimen.py=utf-8
+encoding//objects/company.py=utf-8
+encoding//objects/distrito_aduanero.py=utf-8
+encoding//objects/invoice.py=utf-8
+encoding//objects/sustento_tributario.py=utf-8
+encoding//objects/tarjeta_credito.py=utf-8
+encoding//objects/tipo_comprobante.py=utf-8
+encoding//objects/tipo_comprobante_relacion.py=utf-8
+encoding//objects/tipo_fidecomiso.py=utf-8
+encoding//objects/tipo_transaccion.py=utf-8
+encoding//wizard/ats.py=utf-8
+encoding//wizard/complete_info_wizard.py=utf-8
+encoding/__init__.py=utf-8
+encoding/__openerp__.py=utf-8

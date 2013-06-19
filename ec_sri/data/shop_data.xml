@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data noupdate="1">
+    	<record id="sale.sale_shop_1" model="sale.shop">
+           
+            	<field name="number">001</field>
+            	<field name="name">Almacen1</field>
+            	<field name="payment_default_id">1</field>
+            	<!--edwin <field name="address_id" ref="base.main_address"/> 
+            	<field name="sales_journal_id" search="[('type','=','sale'),('name','=','Sales Journal')]"></field>
+            	<field name="purchases_journal_id" search="[('type','=','purchase'),('name','=','Purchase Journal')]"></field>-->
+            </record>
+            
+            <record id="default_printer_print" model="sri.printer.point">
+	            <field name="name">001</field>
+	            <field name="number">001</field>
+	            <field name="shop_id" ref="sale.sale_shop_1"/>
+            </record>
+    </data>
+</openerp>
