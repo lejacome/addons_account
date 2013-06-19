@@ -16,23 +16,23 @@
 #########################################################################
 
 {
-    "name" : "Documentos complementarios /Ecuador",
+    "name" : "Documentos complementarios Ecuador",
     "version" : "1.0",
-    "author" : "edw.inTG, www.itx.ec",
-    "website" : "http://www.itx.ec/",
-    "category" : "Regulacion Ecuatoriana",
-    "depends" : ['base','ecua_documentos_sri','ecua_verifica_ruc_cedula'],
+    "author" : "SYSCOD Inc, syscod.comyr.com",
+    "website" : "http://www.syscod.comyr.com/",
+    "category" : "Regulación ecuatoriana",
+    "depends" : ['base','ec_sri','ec_ruc'],
     "description": """
     Afecta a facturas, mediante el uso de documentos legales autorizados por el SRI:       
-    Notas de Credito:
+    Notas de Crédito:
             Conceptos: 
                 Errores de facturación: Se facturó un importe superior y luego se lo corrige con NC.
                 Aplicación de bonificaciones y/o descuentos
                 Devoluciones
-                Casos de roturas de mercaderí
-    Notas de Debito:
+                Casos de roturas de mercadería
+    Notas de Débito:
             Conceptos:
-                Error en menos en la facturación.
+                Error en la facturación.
                 Intereses.
                 Gastos por fletes.
                 Gastos bancarios                

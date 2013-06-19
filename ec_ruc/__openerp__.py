@@ -18,12 +18,13 @@
 {
     "name" : "Verificador de Cédula/RUC Ecuador",
     "version" : "1.0",
-    "author" : "Christopher Ormaza, Ecuadorenlinea.net",
-    "website" : "http://www.ecuadorenlinea.net/",
-    "category" : "Ecuadorian Regulations",
+    "author" : "SYSCOD Inc, syscod.comyr.com",
+    "website" : "http://www.syscod.comyr.com/",
+    "category" : "Regulación ecuatoriana",
     "depends" : ['base'],
     "description": """
-    Provide a verification of Cedula and Ruc for Ecuador Legislation, only for information porpouse
+    Provee la verificación de los documentos de identificación de los contribuyentes como son: 
+    Cedula y Ruc.
     """,
     "init_xml": [],
     "update_xml": [

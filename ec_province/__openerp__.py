@@ -20,23 +20,22 @@
 ##############################################################################
 
 {
-  'name' : 'Cities, States and Regions of Ecuador',
-  'version' : '0.1',
-  'author' : 'STRACONX S.A. based in Pablo Roncadio work named city for Openerp',
-  'website' : 'http://openerp.straconx.com',
-  'category' : 'Localisation/Ecuador',
-  'description' : """This Module load Ecuadorian States and Cities on object res.country.state, res.region.state and city.city""",
-  'depends' : ['base'],
-  'init_xml' : [],
-  'demo_xml' : [],
-  'update_xml' : [
+  "name" : "Ciudades, Provincias y Regiones de Ecuador",
+  "version" : "0.1",
+  "author" : "SYSCOD Inc, syscod.comyr.com",
+  "website" : "http://www.syscod.comyr.com/",
+  "category" : "Regulación ecuatoriana",
+  "description" : """Permite ingresar las provincias y ciudades de Ecuador en el objeto res.country.state, 
+  res.region.state y city.city""",
+  "depends" : ['base'],
+  "update_xml" : [
                 'views/partner_view.xml',
                 'views/states_view.xml',
                 'views/menu.xml',
                 'data/ecuadorian_states.xml',
                 'security/ir.model.access.csv'
                 ],
-  'installable' : True,
-  'active' : False,
+  "installable" : True,
+  "active" : False,
 }
 

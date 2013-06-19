@@ -22,20 +22,20 @@
 ########################################################################
 
 {
-    "name" : "Documents Authorized by SRI",
+    "name" : "Documentos autorizados por el SRI",
     "version" : "2.0",
     'sequence': 4,
     'complexity': "easy",
-    "author" : "Christopher Ormaza, Ecuadorenlinea.net",
-    "website" : "http://www.ecuadorenlinea.net/",
-    "category" : "Ecuadorian Regulations",
+    "author" : "SYSCOD Inc, syscod.comyr.com",
+    "website" : "http://www.syscod.comyr.com/",
+    "category" : "Regulación ecuatoriana",
     "depends" : [
                  'base',
                  'account',
                  'account_voucher',
                  'account_accountant',
                  'delivery',
-                 'ecua_verifica_ruc_cedula',
+                 'ec_ruc',
                  'purchase',
                  'sale',
                  'stock',
@@ -43,10 +43,9 @@
                  'report_aeroo_ooo',
                  ],
     "description": """
-    SRI is the regulator of the tax laws in Ecuador, 
-    the agency issued permits for the printing of 
-    bills, withholds, etc, for each company and each agency stated,
-    this is a generic authorization for all documents in Ecuador
+    SRI es regualdor de las leyes de impuestos en Ecuador, 
+    esta entidad emite las respectivas autorizaciones de facturas impresas, 
+    retenciones, etc, para cada empresa.
     """,
     "init_xml": [],
     "update_xml": [ 

@@ -20,12 +20,12 @@
 {
     'name': 'Ecuador - Cuentas NIFF',
     'version': '1.1',
-    'category': 'Localization/Account Charts',
+    "author" : "SYSCOD Inc, syscod.comyr.com",
+    "website" : "http://www.syscod.comyr.com/",
+    "category" : "Regulación ecuatoriana",
     'description': """
-Plan de Cuentas del Ecuador para OpenERP version 7.
+        Plan de Cuentas del Ecuador para OpenERP version 7.
     """,
-    'author': 'SYSCOD',
-    'website': 'http://www.syscod.comyr.com',
     'depends': [
         'account',
         'base_vat',

@@ -31,6 +31,7 @@ import re
 from lxml import etree
 import addons.decimal_precision as dp
 from compiler.ast import Function
+from tools import amount_to_text_en
 
 class account_invoice(osv.osv):
 

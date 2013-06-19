@@ -22,15 +22,15 @@
 ########################################################################
 
 {
-        "name" : "Ecuadorian Anexos",
-        "version" : "1.17",
-        "author" :  "Christopher Ormaza Acosta, Ecuadorenlinea.net",
-        "website" : "http://www.ecuadorenlinea.net/",
-        "category" : "Ecuadorian Legislation",
-        "description": """ATS for Commercial Companies""",
+        "name" : "Anexos Transaccionales-ATS",
+        "version" : "1.0",
+        "author" : "SYSCOD Inc, syscod.comyr.com",
+        "website" : "http://www.syscod.comyr.com/",
+        "category" : "Regulación ecuatoriana",
+        "description": """Anexos Transaccionales -ATS- para el SRI""",
         "depends" : ['base',
                      'account',
-                     'ecua_documentos_sri',
+                     'ec_sri',
                      ],
         "init_xml" : [ 
                         'data/tipo_comprobantes.xml',
