@@ -18,16 +18,14 @@
 #
 ##############################################################################
 {
-    'name': 'Ecuador - Accounting NIFF',
+    'name': 'Ecuador - Cuentas NIFF',
     'version': '1.1',
     'category': 'Localization/Account Charts',
     'description': """
-This is the base module to manage the accounting chart for Ecuador in OpenERP version 7.
-==============================================================================
-
-Accounting chart and localization for Ecuador.
+Plan de Cuentas del Ecuador para OpenERP version 7.
     """,
-    'author': 'ITX',
+    'author': 'SYSCOD',
+    'website': 'http://www.syscod.comyr.com',
     'depends': [
         'account',
         'base_vat',
