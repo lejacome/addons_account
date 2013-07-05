@@ -696,7 +696,7 @@
 		
 		<record id="imp721" model="account.tax.template">
 			<field name="chart_template_id" ref="ec_chart_template"/>
-			<field name="name">RETENCIONES 30% IVA imp721</field>
+			<field name="name">RETENCIONES 30% IVA</field>
 			<field eval="0.120000" name="amount"/>
 			<field name="type">percent</field>
 			<field name="account_collected_id" ref="20114010301"/>
@@ -727,7 +727,7 @@
 
 		<record id="imp723" model="account.tax.template">
 			<field name="chart_template_id" ref="ec_chart_template"/>
-			<field name="name">RETENCIONES 70% IVA imp723</field>
+			<field name="name">RETENCIONES 70% IVA</field>
 			<field eval="0.120000" name="amount"/>
 			<field name="type">percent</field>
 			<field name="account_collected_id" ref="20114010302"/>
@@ -759,7 +759,7 @@
 
 		<record id="imp725" model="account.tax.template">
 			<field name="chart_template_id" ref="ec_chart_template"/>
-			<field name="name">RETENCIONES 100% IVA imp725</field>
+			<field name="name">RETENCIONES 100% IVA</field>
 			<field eval="0.120000" name="amount"/>
 			<field name="type">percent</field>
 			<field name="account_collected_id" ref="20114010303"/>

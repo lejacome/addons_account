@@ -6,44 +6,12 @@
     <record model="account.tax.code.template" id="vat_code_tax">
         <field name="name">Tax</field>
     </record>
-    
-    <record model="account.tax.code.template" id="vat_code_balance_net">
-        <field name="name">Tax Balance to Pay</field>
-        <field name="parent_id" ref="vat_code_tax"/>
-    </record>
-
-    <record model="account.tax.code.template" id="vat_code_due_tva">
-        <field name="name">Tax Due (Tax to pay)</field>
-        <field name="parent_id" ref="vat_code_balance_net"/>
-    </record>
-
-    <record model="account.tax.code.template" id="vat_code_payable">
-        <field name="name">Tax Payable</field>
-        <field name="parent_id" ref="vat_code_balance_net"/>
-    </record>
-
-    <record model="account.tax.code.template" id="vat_code_base_net">
-        <field name="name">Tax Bases</field>
-        <field name="parent_id" ref="vat_code_tax"/>
-    </record>
-
-
-    <record model="account.tax.code.template" id="vat_code_base_due">
-        <field name="name">Base of Taxed Sales</field>
-        <field name="parent_id" ref="vat_code_base_net"/>
-    </record>
-
-
-    <record model="account.tax.code.template" id="vat_code_receivable_net">
-        <field name="name">Base of Taxed Purchases</field>
-        <field name="parent_id" ref="vat_code_base_net"/>
-    </record>
 
 
 
 <!-- 103 -->
 
-		<!--record id="tax103" model="account.tax.code.template">
+		<record id="tax103" model="account.tax.code.template">
 			<field name="name">DECLARACIÓN DE RETENCIONES EN LA FUENTE DEL IMPUESTO A LA RENTA</field>
 			<field name="code">103</field>
 			<field name="sign">0.0</field>
@@ -535,11 +503,11 @@
 			<field name="sign">1.0</field>
 			<field name="parent_id" ref="tax498"/>
 			
-		</record-->
+		</record>
 
 <!-- 104 -->
 
-   <!--record id="tax104" model="account.tax.code.template">
+   <record id="tax104" model="account.tax.code.template">
 			
 			<field name="name">DECLARACIÓN DEL IMPUESTO AL VALOR AGREGADO</field>
 			<field name="code">104</field>
@@ -821,7 +789,7 @@
 		
 		<record id="tax721" model="account.tax.code.template">
 			
-			<field name="name">RETENCIONES 30% IVA 721</field>
+			<field name="name">RETENCIONES 30%</field>
 			<field name="code">721</field>
 			<field name="parent_id" ref="tax799"/>
 			<field name="sign">1</field>
@@ -830,7 +798,7 @@
 		
 		<record id="tax723" model="account.tax.code.template">
 			
-			<field name="name">RETENCIONES 70% IVA 723</field>
+			<field name="name">RETENCIONES 70%</field>
 			<field name="code">723</field>
 			<field name="parent_id" ref="tax799"/>
 			<field name="sign">1</field>
@@ -839,12 +807,12 @@
 
 		<record id="tax725" model="account.tax.code.template">
 			
-			<field name="name">RETENCIONES 100% IVA 725</field>
+			<field name="name">RETENCIONES 100%</field>
 			<field name="code">725</field>
 			<field name="parent_id" ref="tax799"/>
 			<field name="sign">1</field>
 			<field name="type">withholding</field>
-		</record-->
+		</record>
 
   </data>
 </openerp>
