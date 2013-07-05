@@ -3477,15 +3477,6 @@
 			<field ref="2011401" name="parent_id" />
 		</record>
 
-		<record model="account.account.template" id="20114010101">
-			<field name="name">IVA COBRADO EN VENTAS LOCALES</field>
-			<field name="code">20114010101</field>
-			<field name="reconcile" eval="True"/>
-			<field ref="account_type_liability" name="user_type"/>
-			<field name="type">other</field>
-			<field ref="201140101" name="parent_id" />
-		</record>
-
 		<record model="account.account.template" id="20114010102">
 			<field name="name">IVA COBRADO EN VENTAS DE ACTIVOS FIJOS</field>
 			<field name="code">20114010102</field>
@@ -3507,6 +3498,15 @@
 		<record model="account.account.template" id="20114010104">
 			<field name="name">IVA COBRADO EN EXPORTACION DE SERVICIOS</field>
 			<field name="code">20114010104</field>
+			<field name="reconcile" eval="True"/>
+			<field ref="account_type_liability" name="user_type"/>
+			<field name="type">other</field>
+			<field ref="201140101" name="parent_id" />
+		</record>
+
+                <record model="account.account.template" id="20114010101">
+			<field name="name">IVA COBRADO EN VENTAS LOCALES</field>
+			<field name="code">20114010101</field>
 			<field name="reconcile" eval="True"/>
 			<field ref="account_type_liability" name="user_type"/>
 			<field name="type">other</field>
