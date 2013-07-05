@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<openerp>
+	<data>
+<!-- ##########################Nota de Crédito############################ -->
+  <!-- Nota de Crédito MENU-->   
+    <menuitem parent="account.menu_finance_receivables" id="menu_ecua_ndc" action="ec_rect.action_ecua_ndc_list" /> 
+ 
+ <!-- ##########################Nota de Débito############################ -->
+  <!-- Nota de Débito MENU-->   
+    <menuitem parent="account.menu_finance_receivables" id="menu_ecua_ndd" action="ec_rect.action_ecua_ndd_list" />
+
+ <!-- ##########################Retenciones############################ -->  
+   <!-- Retenciones MENU--> 	
+	<menuitem id="account_retention_line_menu" name="Retentions in Purchases Lines" parent="account.menu_finance_receivables"
+	 action="ec_rect.action_account_retention_line_tree_view" />    
+  </data>
+</openerp>

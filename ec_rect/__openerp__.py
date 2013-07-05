@@ -23,7 +23,16 @@
     "category" : "Regulación ecuatoriana",
     "depends" : ['base','ec_sri','ec_ruc'],
     "description": """
-    Afecta a facturas, mediante el uso de documentos legales autorizados por el SRI:       
+    Afecta a facturas, mediante el uso de documentos legales autorizados por el SRI:
+    Retenciones:
+                Entendemos como retención en la fuente, como una especie de mecanismo de cobro anticipado del 
+                impuestos, mediante el cual la Administración Tributaria, ejecutada por el SRI,  obliga a 
+                retener una parte de los impuestos causado por el contribuyente, con cargo a los ingresos que 
+                perciba por ventas de bienes y prestación de servicios, según corresponda.
+            Conceptos:
+                RENTA.-
+                IVA.-
+                DIVISAS.-
     Notas de Crédito:
             Conceptos: 
                 Errores de facturación: Se facturó un importe superior y luego se lo corrige con NC.
@@ -39,7 +48,10 @@
     """,
     "init_xml": [],
     "update_xml": [
-     'views/doc_complements_view.xml',
+     'views/ndc_view.xml',
+     'views/ndd_view.xml',
+     'views/retencion_view.xml',
+     'views/invoice_view.xml', 
     ],
     "installable": True,
     "active": False,

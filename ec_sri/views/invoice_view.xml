@@ -166,10 +166,10 @@
 								</div>
 								<field name="comment" class="oe_inline" placeholder="Additional notes..." />
 							</page>
-							<page string="Retenciones">
+						<!-- 	<page string="Retenciones">
 								<field name="retention_ids" nolabel="1" readonly="1"
 									widget="one2many" colspan="4"/>
-								<!-- <field name="retention_ids" nolabel="1" readonly="1"
+								 <field name="retention_ids" nolabel="1" readonly="1"
 									widget="one2many" colspan="4"
 									context="{'form_view_ref' : 'ecua_retenciones_manual.view_account_retention_purchase_form'}">
 									<tree string="Withholdings">
@@ -180,7 +180,7 @@
 										<field name="total_renta" sum="Total Retenciones Renta" />
 										<field name="state" />
 									</tree>
-								</field> -->
+								</field> 
 								<field name="retention_line_ids" nolabel="1" readonly="1"
 									colspan="4" widget="one2many">
 									<tree string="Withholding Lines">
@@ -211,8 +211,8 @@
                                                        'journal_type':'sale_refund', 
                                                        'tree_view_ref' : 'ecua_documentos_sri.credit_note_out_tree',
                                                        'form_view_ref' : 'ecua_documentos_sri.customer_credit_note_invoice_view_form'}" />
-							</page>
-							<page string="Debit Notes">
+							</page> 
+						    <page string="Debit Notes">
 								<field name="debit_note_ids" nolabel="1" colspan="4"
 									widget="one2many" readonly="1"
 									domain="[('state', '=', 'paid'),('type','=','out_refund')]"
@@ -220,7 +220,7 @@
                                                        'journal_type':'sale_refund', 
                                                        'tree_view_ref' : 'ecua_documentos_sri.credit_note_out_tree',
                                                        'form_view_ref' : 'ecua_documentos_sri.customer_credit_note_invoice_view_form'}" />
-							</page>
+							</page> -->
 							<page string="Other Info">
 								<group col="4">
 									<group>

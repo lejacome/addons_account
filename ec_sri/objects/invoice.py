@@ -506,8 +506,8 @@ class account_invoice(osv.osv):
                 'autorization_credit_note_id':fields.many2one('sri.authorization', 'Autorizationnumber_liquidation', required=False, states={'draft':[('readonly', False)]}),
                 'authorization_credit_note_purchase_id':fields.many2one('sri.authorization.supplier', 'Authorization', readonly=True, states={'draft':[('readonly',False)]}), 
                 #'credit_note_ids':fields.one2many('account.invoice', 'invoice_rectification_id', 'Credit Notes', required=False),
-                'credit_note_ids':fields.one2many('ecua.ndc', 'num_comprob_venta', 'Credit Notes', required=False),
-                'debit_note_ids':fields.one2many('ecua.ndd', 'num_comprob_venta', 'Debit Notes', required=False),
+                #'credit_note_ids':fields.one2many('ecua.ndc', 'num_comprob_venta', 'Credit Notes', required=False),
+                #'debit_note_ids':fields.one2many('ecua.ndd', 'num_comprob_venta', 'Debit Notes', required=False),
                 
                 'state': fields.selection([
                 ('draft','Draft'),

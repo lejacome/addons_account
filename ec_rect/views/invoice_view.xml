@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<openerp>
+	<data>
+ <!-- ##########################Factura############################ -->
+ <!--  Factura FORM-->
+    <record model="ir.ui.view" id="view_ecua_invoice_form">
+        <field name="name">account.invoice.form.view</field>
+        <field name="type">form</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_form" />
+        <field name="priority" eval="1"/> <!-- ?? -->
+        <field name="arch" type="xml">
+         <notebook position="inside">
+        			<page string="Retenciones">
+								<field name="retention_ids" nolabel="1" readonly="1"
+									widget="one2many" colspan="4"/>
+								 <field name="retention_ids" nolabel="1" readonly="1"
+									widget="one2many" colspan="4"
+									context="{'form_view_ref' : 'ecua_retenciones_manual.view_account_retention_purchase_form'}">
+									<tree string="Withholdings">
+										<field name="doc_number" />
+										<field name="period_id" />
+										<field name="creation_date" />
+										<field name="total_iva" sum="Total Retenciones IVA" />
+										<field name="total_renta" sum="Total Retenciones Renta" />
+										<field name="state" />
+									</tree>
+								</field> 
+								 <field name="retention_line_ids" nolabel="1" readonly="1"
+									colspan="4" widget="one2many">
+									<tree string="Withholding Lines">
+										<field name="fiscalyear_id" />
+										<field name="period_id" />
+										<field name="description" />
+										<field name="tax_id" />
+										<field name="tax_base" />
+										<field name="retention_percentage" />
+										<field name="retained_value" sum="Total Retained" />
+									</tree>
+									<form string="Withholding Line">
+										<field name="fiscalyear_id" />
+										<field name="period_id" />
+										<field name="description" />
+										<field name="tax_id" />
+										<field name="tax_base" />
+										<field name="retention_percentage" />
+										<field name="retained_value" />
+									</form>
+								</field> 
+							</page>
+							<page string="Credit Notes">
+								<field name="credit_note_ids" nolabel="1" colspan="4"
+									widget="one2many" readonly="1"
+									domain="[('state', '=', 'paid'),('type','=','out_refund')]"
+									context="{'type':'out_refund', 
+                                                       'journal_type':'sale_refund', 
+                                                       'tree_view_ref' : 'ecua_documentos_sri.credit_note_out_tree',
+                                                       'form_view_ref' : 'ecua_documentos_sri.customer_credit_note_invoice_view_form'}" />
+							</page> 
+						    <page string="Debit Notes">
+								<field name="debit_note_ids" nolabel="1" colspan="4"
+									widget="one2many" readonly="1"
+									domain="[('state', '=', 'paid'),('type','=','out_refund')]"
+									context="{'type':'out_refund', 
+                                                       'journal_type':'sale_refund', 
+                                                       'tree_view_ref' : 'ecua_documentos_sri.credit_note_out_tree',
+                                                       'form_view_ref' : 'ecua_documentos_sri.customer_credit_note_invoice_view_form'}" />
+							</page>
+					</notebook>     
+       		</field>
+    </record>
+ <!-- ##########################Factura END############################ -->
+  </data>
+</openerp>

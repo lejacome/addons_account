@@ -1,231 +1,49 @@
-# -*- encoding: utf-8 -*-
-########################################################################
-#
-# @authors: Christopher Ormaza
-# Copyright (C) 2013  Ecuadorenlinea.net
-#
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
-#
-# This module is GPLv3 or newer and incompatible
-# with OpenERP SA "AGPL + Private Use License"!
-#
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#GNU General Public License for more details.
-#
-#You should have received a copy of the GNU General Public License
-#along with this program.  If not, see http://www.gnu.org/licenses.
-########################################################################
+# -*- coding: utf-8 -*-
+#############################################################################
+#     OpenERP, Open Source Management Solution                              #
+#     Copyright (C) 2013  ed.winTG, www.syscod.com                          #
+#                                                                           #
+#    This program is free software: you can redistribute it and/or modify   #
+#    it under the terms of the GNU General Public License as published by   #
+#    the Free Software Foundation, either version 3 of the License, or      #
+#    (at your option) any later version.                                    #
+#                                                                           #
+#    This program is distributed in the hope that it will be useful,        #
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of         #
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          #
+#    GNU General Public License for more details.                           #
+#                                                                           #
+#    You should have received a copy of the GNU General Public License      #
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.  #
+#############################################################################
 
-from osv import fields,osv
-import addons.decimal_precision as dp
-import re
+
+
+import logging
+from osv import fields, osv
+import netsvc, tools
 import time
 from tools.translate import _
-import netsvc
-from mx import DateTime
 import datetime
+import re
+import addons.decimal_precision as dp
 
-class account_invoice(osv.osv):
+_logger = logging.getLogger(__name__)
 
-    _inherit = "account.invoice"
-
-    _columns = {
-                #Anterior 'retention_ids':fields.one2many('account.retention', 'invoice_id', 'Retention', states={'paid':[('readonly',True)]}),
-                #'retention_ids':fields.one2many('ecua.retencion', 'num_comprob_venta', 'Retention'),      
-                #'retention_line_ids':fields.one2many('account.retention.line', 'invoice_id', 'Retention Lines', states={'paid':[('readonly',True)]}),      
-               }
-
-    def action_date_assign(self, cr, uid, ids, *args):
-        ret_line_obj = self.pool.get('account.retention.line')
-        date=False
-        res = super(account_invoice, self).action_date_assign(cr, uid, ids, args)
-        for inv in self.browse(cr, uid, ids):
-            if inv.type=='in_invoice':
-                if inv.retention_line_ids:
-                    if not inv.date_invoice:
-                        date = time.strftime('%Y-%m-%d')
-                    else:
-                        date = inv.date_invoice
-                    for ret_line in inv.retention_line_ids:
-                        ret_line_obj.write(cr, uid, ret_line.id, {'creation_date':date})
-        return res
-
-    def action_number(self, cr, uid, ids, context=None):
-        context = {}
-        wf_service = netsvc.LocalService("workflow")
-        for inv in self.browse(cr, uid, ids):
-            if inv.type in ('in_invoice'):
-               if (inv['retention_ids']):
-                   wf_service.trg_validate(uid, 'account.retention', inv['retention_ids'][0]['id'], 'approve_signal', cr)
-        return super(account_invoice, self).action_number(cr, uid, ids, context)
+class ecua_retencion(osv.osv):
     
-    
-    def button_reset_taxes(self, cr, uid, ids, context=None):
-        if context is None:
-            context = {}
-        ctx = context.copy()
-        ait_obj = self.pool.get('account.invoice.tax')
-        for id in ids:
-            #if not self.pool.get('account.invoice').browse(cr, uid, id, context).invoice_line:
-            #    raise osv.except_osv(_('Invalid action !'), _('You must enter at least one invoice line'))
-            cr.execute("DELETE FROM account_invoice_tax WHERE invoice_id=%s AND manual is False", (id,))
-            partner = self.browse(cr, uid, id, context=ctx).partner_id
-            if partner.lang:
-                ctx.update({'lang': partner.lang})
-            for taxe in ait_obj.compute(cr, uid, id, context=ctx).values():
-                ait_obj.create(cr, uid, taxe)
-        # Update the stored value (fields.function), so we write to trigger recompute
-        self.pool.get('account.invoice').write(cr, uid, ids, {'invoice_line':[]}, context=ctx)
-        
-        inv_obj = self.pool.get('account.invoice')
-        tax_obj = self.pool.get('account.invoice.tax')
-        ret_obj = self.pool.get('account.retention')
-        ret_line= self.pool.get('account.retention.line')
-        seq_obj = self.pool.get('ir.sequence')
-        invoice = inv_obj.browse(cr, uid, ids, context)
-            
-        for inv in invoice:
-            cr.execute("DELETE FROM account_retention_line WHERE invoice_id=%s", (inv.id,))
-            if (inv['type'] in ('in_invoice','in_refund')):
-                if not (inv['retention_ids']):
-                    #crear retencion
-                    vals_aut=self.pool.get('sri.authorization').get_auth_secuence(cr, uid, 'withholding')
-                    user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
-                    vals_ret={
-                              'creation_date': inv['date_invoice'],
-                              'transaction_type':'purchase',
-                              'invoice_id':inv['id'],
-                              'authorization_purchase_id':vals_aut['authorization'],
-                              }
-                    ret_id = ret_obj.create(cr, uid, vals_ret, context)
-                    
-                    #creamos las lineas de retenciones
-                    contador_impuestos = 0
-                    for tax_line in inv.tax_line:
-                        fiscalyear_id = None
-                        if not inv['period_id']:
-                            period_ids = self.pool.get('account.period').search(cr, uid, [('date_start','<=',time.strftime('%Y-%m-%d')),('date_stop','>=',time.strftime('%Y-%m-%d')),])
-                            if period_ids:
-                                fiscalyear_id= self.pool.get('account.period').browse(cr, uid, [period_ids[0]], context)[0]['fiscalyear_id']['id']
-                        else:
-                            fiscalyear_id = inv['period_id']['fiscalyear_id']['id']
-                        if (tax_line['tax_amount']< 0):
-                            contador_impuestos = contador_impuestos + 1
-                            porcentaje= (float(tax_line['tax_amount']/tax_line['base']))*(-100)
-                            tax_id = tax_line['tax_code_id']['id']
-                            if tax_line['type_ec'] == 'renta':
-                                tax_id = tax_line['base_code_id']['id']                            
-                            vals_ret_line = {'tax_base':tax_line['base'] ,
-                                             'fiscalyear_id':fiscalyear_id,
-                                             'retention_id':ret_id,
-                                             'description': tax_line['type_ec'],
-                                             'tax_id': tax_id
-                                             }
-                            ret_line_id = ret_line.create(cr, uid, vals_ret_line, context)
-                        elif tax_line['tax_amount'] == 0 and tax_line['type_ec'] == 'renta':
-                            vals_ret_line = {'tax_base':tax_line.base,
-                                             'fiscalyear_id':fiscalyear_id,
-                                             'invoice_without_retention_id': inv.id,
-                                             'description': tax_line.type_ec,
-                                             'tax_id': tax_line.base_code_id.id,
-                                             'creation_date_invoice': inv.date_invoice,
-                                             }
-                            ret_line_id = ret_line.create(cr, uid, vals_ret_line, context)
-                    if(contador_impuestos<=0):
-                        ret_obj.unlink(cr, uid, [ret_id], context)
-                else:
-                    ret_actual = ret_obj.read(cr, uid, inv['retention_ids'][0]['id'], context)
-                    # actualizar retencion
-            
-                    cr.execute("DELETE FROM account_retention_line WHERE retention_id=%s", (ret_actual['id'],))                    
-                        #actualizamos las lineas de retenciones
-                    contador_impuestos = 0
-                    
-                    for tax_line in inv.tax_line:
-                        fiscalyear_id = None
-                        if not inv['period_id']:
-                            period_ids = self.pool.get('account.period').search(cr, uid, [('date_start','<=',time.strftime('%Y-%m-%d')),('date_stop','>=',time.strftime('%Y-%m-%d')),])
-                            if period_ids:
-                                fiscalyear_id= self.pool.get('account.period').browse(cr, uid, [period_ids[0]], context)[0]['fiscalyear_id']['id']
-                        else:
-                            fiscalyear_id = inv['period_id']['fiscalyear_id']['id']
-                        if (tax_line['tax_amount']< 0):
-                            contador_impuestos = contador_impuestos + 1
-                            porcentaje= (float(tax_line['tax_amount']/tax_line['base']))*(-100)
-                            tax_id = tax_line['tax_code_id']['id']
-                            if tax_line['type_ec'] == 'renta':
-                                tax_id = tax_line['base_code_id']['id']
-                            vals_ret_line = {'tax_base':tax_line['base'] ,
-                                                 'fiscalyear_id':fiscalyear_id,
-                                                 'retention_id':ret_actual['id'],
-                                                 'description': tax_line['type_ec'],
-                                                 'tax_id': tax_id
-                                                 }
-                            ret_line_id = ret_line.create(cr, uid, vals_ret_line, context)
-                        elif tax_line['tax_amount'] == 0 and tax_line['type_ec'] == 'renta':
-                            vals_ret_line = {'tax_base':tax_line['base'] ,
-                                             'fiscalyear_id':fiscalyear_id,
-                                             'invoice_without_retention_id': inv.id,
-                                             'description': tax_line['type_ec'],
-                                             'tax_id': tax_line['base_code_id']['id'],
-                                             'creation_date_invoice': inv.date_invoice,
-                                             }
-                            ret_line_id = ret_line.create(cr, uid, vals_ret_line, context)
-                    if(contador_impuestos<=0):
-                        ret_obj.unlink(cr, uid, [ret_actual['id']], context)
-                                
-        return super(account_invoice, self).button_reset_taxes(cr, uid, ids, context)
-
-    def copy(self, cr, uid, id, default={}, context=None):
-        if context is None:
-            context = {}
-        default.update({
-            'retention_ids':[],
-            'retention_line_ids':[],
-
-        })
-
-        return super(account_invoice, self).copy(cr, uid, id, default, context)
-    
-    def action_cancel(self, cr, uid, ids, *args):
-        ret_line_obj = self.pool.get('account.retention.line')
-        context={}
-        wf_service = netsvc.LocalService("workflow")
-        invoices = self.pool.get('account.invoice').browse(cr, uid, ids, context)
-        for inv in invoices:
-            if inv.retention_ids:
-                retencion = inv.retention_ids[0]
-                if retencion.state == 'approved':
-                    wf_service.trg_validate(uid, 'account.retention', retencion.id, 'canceled_signal', cr)
-                self.pool.get('account.retention').unlink(cr, uid, [retencion.id, ], context={'invoice':True})
-                   #TODO: Se debe verificar que la retencion que tiene la factura este aprobada
-            if inv.retention_line_ids:
-                for ret_line in inv.retention_line_ids:
-                    ret_line_obj.unlink(cr, uid, [ret_line.id])
-        return super(account_invoice, self).action_cancel(cr, uid, ids, context)
-
-account_invoice()
-
-
-class account_withhold(osv.osv):
-        
     def check_retention_out(self,cr,uid,ids, context=None):
         cadena = '(\d{3})+\-(\d{3})+\-(\d{9})'
         for retention in self.browse(cr, uid, ids):
-            ref = retention['number']
-            if retention['number']:
+            ref = retention['doc_number']
+            if retention['doc_number']:
                 if re.match(cadena, ref):
                     return True
                 else:
                     return False
             else:
                 return True
-            
+    #valida autorizacion de las retenciones de venta        
     def validar_authorization(self,cr, uid, ids, context=None):
         a=0
         b= True
@@ -238,7 +56,16 @@ class account_withhold(osv.osv):
                         b=False
                         break
             return b
-
+                    
+    def check_ref(self, cr, uid, ids):
+        partner_obj = self.pool.get('res.partner')
+        for data in self.browse(cr, uid, ids):
+            return partner_obj.check_ced(data.ruc).get('valid', False)
+    
+    def _default_company(self, cr, uid, context=None):
+        user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
+        return user.company_id and user.company_id.id or False
+    
     def _total(self, cr, uid, ids, field_name, arg, context=None):
         cur_obj = self.pool.get('res.currency')
         res = {}
@@ -288,29 +115,30 @@ class account_withhold(osv.osv):
     
     def _get_retention(self, cr, uid, ids, context=None):
         result = {}
-        for line in self.pool.get('account.retention.line').browse(cr, uid, ids, context=context):
+        for line in self.pool.get('ecua.retencion.line').browse(cr, uid, ids, context=context):
             result[line.retention_id.id] = True
         return result.keys()
     
     def _get_generated_document(self, cr, uid, ids, context=None):
         user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
         return user.company_id.generate_automatic
-
-    _name = 'account.retention'
     
-    _columns = {
-        'number': fields.char('Number', size=17, required=False, states={'approved':[('readonly',True)]}),
+    _name = 'ecua.retencion'
+    _description='Retention'
+        
+    _columns = {                 
+        'doc_number': fields.char('Number', size=17, required=False, states={'approved':[('readonly',True)]}),
         'number_purchase': fields.char('Retention Number', size=17, required=False, readonly=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
         'number_sale': fields.char('Retention Number', size=17, required=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
         'creation_date': fields.date('Creation Date',states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
         'authorization_purchase_id':fields.many2one('sri.authorization', 'Authorization', required=False, readonly=True),
-        'authorization_sale':fields.char('Authorization', size=10, required=False, readonly=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}, help='This Number is necesary for SRI reports'),
         'authorization_sale_id':fields.many2one('sri.authorization.supplier', 'Authorization', ),
+        'authorization_sale':fields.char('Authorization', size=10, required=False, readonly=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}, help='This Number is necesary for SRI reports'),        
         'transaction_type':fields.selection([
-            ('purchase','Purchases'),
-            ('sale','Sales'),
+            ('purchase','Compras'),
+            ('sale','Ventas'),
             ],  'Transaction type', required=True, readonly=True),
-        'retention_line_ids': fields.one2many('account.retention.line', 'retention_id', 'Retention Lines',states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
+        'retention_line_ids': fields.one2many('ecua.retencion.line', 'retention_id', 'Retention Lines',states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),   
         'invoice_id': fields.many2one('account.invoice', 'Number of document', required=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}, ondelete='cascade'),
         'partner_id': fields.related('invoice_id','partner_id', type='many2one', relation='res.partner', string='Partner', store=True), 
         'company_id': fields.related('invoice_id','company_id', type='many2one', relation='res.company', string='Company', store=True),
@@ -320,40 +148,40 @@ class account_withhold(osv.osv):
             ('canceled','Canceled'),
             ],  'State', required=True, readonly=True),
         'total': fields.function(_total, method=True, type='float', string='Total Retenido', store = {
-                                 'account.retention': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
-                                 'account.retention.line': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
+                                 'ecua.retencion': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
+                                 'ecua.lineas.retencion': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
                                  }), 
         'total_iva': fields.function(_total_iva, method=True, type='float', string='Total IVA', store = {
-                                 'account.retention': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
-                                 'account.retention.line': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
+                                 'ecua.retencion': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
+                                 'ecua.lineas.retencion': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
                                  }), 
         'total_renta': fields.function(_total_renta, method=True, type='float', string='Total Renta', store = {
-                                 'account.retention': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
-                                 'account.retention.line': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
+                                 'ecua.retencion': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
+                                 'ecua.lineas.retencion': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
                                  }),
         'account_voucher_ids':fields.one2many('account.voucher', 'retention_id', 'Retention', required=False),
         'automatic':fields.boolean('Automatic?',),
         'period_id': fields.related('invoice_id','period_id', type='many2one', relation='account.period', string='Period', store=True), 
         'shop_id':fields.many2one('sale.shop', 'Shop', readonly=True, states={'draft':[('readonly',False)]}),
-        'printer_id':fields.many2one('sri.printer.point', 'Printer Point', readonly=True, states={'draft':[('readonly',False)]}),
-    }
+        'printer_id':fields.many2one('sri.printer.point', 'Printer Point', readonly=True, states={'draft':[('readonly',False)]}),             
+             }
+
+    _rec_name='doc_number'
     
-    _rec_name='number'
+    _constraints = [(check_retention_out, _('El numero de retencion es incorrecto, debe ser como 001-00X-000XXXXXX, X es un numero'),['number']),]
     
-    _constraints = [(check_retention_out, _('The number of retention is incorrect, it must be like 001-00X-000XXXXXX, X is a number'),['number']),]
-    
-    _sql_constraints = [('withhold_number_purchase_uniq','unique(number_purchase, company_id)', _('There is another Withhold generated with this number, please verify'))]
+    _sql_constraints = [('retencion_compra_unico','unique(number_purchase, company_id)', _('Hay otra Retencion generado con este número, por favor verifique'))]
     
     _defaults = {
-                 'number': '',
+                 'doc_number': '',
                  'transaction_type': lambda *a: 'sale',
                  'state': lambda *a: 'draft',
                  }
-    
+
     def unlink(self, cr, uid, ids, context=None):
         if context is None:
             context = {}
-        retention = self.pool.get('account.retention').browse(cr, uid, ids, context)
+        retention = self.pool.get('ecua.retencion').browse(cr, uid, ids, context)
         flag = context.get('invoice', False)
         unlink_ids = []
         for r in retention:
@@ -368,7 +196,7 @@ class account_withhold(osv.osv):
                             raise osv.except_osv(_('Invalid action !'), _('Cannot delete retention(s) that are already assigned Number!'))
             else:
                 unlink_ids.append(r['id'])
-        return super(account_withhold, self).unlink(cr, uid, unlink_ids, context)
+        return super(ecua_retencion, self).unlink(cr, uid, unlink_ids, context)
     
     
     def action_move_line_create(self, cr, uid, ids, context=None):
@@ -571,7 +399,7 @@ class account_withhold(osv.osv):
         acc_vou_obj = self.pool.get('account.voucher')
         acc_vou_line_obj = self.pool.get('account.voucher.line')
         acc_move_line_obj = self.pool.get('account.move.line')
-        ret_line_obj = self.pool.get('account.retention.line')
+        ret_line_obj = self.pool.get('ecua.retencion.line')
         period_obj = self.pool.get('account.period')
         company = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id
         journal_iva = company.journal_iva_id
@@ -581,7 +409,7 @@ class account_withhold(osv.osv):
         if not journal_ir.default_debit_account_id:
             raise osv.except_osv('Error!', _("IR Retention Journal doesn't have debit account assigned!, can't complete operation"))
         currency_pool = self.pool.get('res.currency')
-        ret_obj = self.pool.get('account.retention')
+        ret_obj = self.pool.get('ecua.retencion')
         for ret in self.browse(cr,uid,ids,context=None):
             #lineas contables no conciliadas que pertenecen a la factura
             day = datetime.timedelta(days=5)
@@ -710,7 +538,7 @@ class account_withhold(osv.osv):
                         date_ret = time.strftime('%Y-%m-%d')
                     else:
                         date_ret = ret.creation_date
-                    self.write(cr, uid, [ret.id,], { 'state': 'approved','creation_date': date_ret,'number':ret.number_sale, 'period_id': period}, context)
+                    self.write(cr, uid, [ret.id,], { 'state': 'approved','creation_date': date_ret,'doc_number':ret.number_sale, 'period_id': period}, context)
                 else:
                     raise osv.except_osv('Error!', _("You can't aprove a retention without retention lines"))
             elif(ret['transaction_type']=='purchase'):
@@ -727,14 +555,14 @@ class account_withhold(osv.osv):
                     for doc in ret.authorization_purchase_id.type_document_ids:
                         if doc.name=='withholding':
                             document_obj.add_document(cr, uid, [doc.id,], context)
-                    self.write(cr, uid, [ret.id], {'number': ret.number_purchase, 'state': 'approved', 'period_id': period}, context)
+                    self.write(cr, uid, [ret.id], {'doc_number': ret.number_purchase, 'state': 'approved', 'period_id': period}, context)
                 else:
                     if not ret.number_purchase:
                         b = True
                         vals_aut = self.pool.get('sri.authorization').get_auth_secuence(cr, uid, 'withholding')
                         while b :
                             number = self.pool.get('ir.sequence').get_id(cr, uid, vals_aut['sequence'])
-                            if not self.pool.get('account.retention').search(cr, uid, [('transaction_type','=','purchase'),('number','=',number),('id','not in',tuple(ids))],):
+                            if not self.pool.get('ecua.retencion').search(cr, uid, [('transaction_type','=','purchase'),('doc_number','=',number),('id','not in',tuple(ids))],):
                                 b=False
                     else:
                         number = ret.number_purchase
@@ -743,12 +571,12 @@ class account_withhold(osv.osv):
                             if doc.automatic:
                                 context['automatic'] = True
                             document_obj.add_document(cr, uid, [doc.id,], context)
-                    self.write(cr, uid, [ret.id], {'number': number, 'state': 'approved', 'period_id': period, 'number_purchase':number}, context)
+                    self.write(cr, uid, [ret.id], {'doc_number': number, 'state': 'approved', 'period_id': period, 'number_purchase':number}, context)
         return True
     
     def action_cancel(self,cr,uid,ids,context=None):
         document_obj = self.pool.get('sri.type.document')
-        retentions = self.pool.get('account.retention').browse(cr, uid, ids, context)
+        retentions = self.pool.get('ecua.retencion').browse(cr, uid, ids, context)
         for ret in retentions:
             if ret.state == "draft":
                 self.unlink(cr, uid, [ret.id,], context)
@@ -757,35 +585,140 @@ class account_withhold(osv.osv):
                     for doc in ret.authorization_purchase_id.type_document_ids:
                         if doc.name=='withholding':
                             document_obj.rest_document(cr, uid, [doc.id,])
-                    self.pool.get('account.retention').write(cr, uid, [ret.id, ], {'state':'canceled'}, context)
+                    self.pool.get('ecua.retencion').write(cr, uid, [ret.id, ], {'state':'canceled'}, context)
                 if ret.transaction_type == "sale":
                     vouchers = []
                     for vou in ret.account_voucher_ids:
                         vouchers.append(vou.id)
                     self.pool.get('account.voucher').cancel_voucher(cr, uid, vouchers, context)
-                    self.pool.get('account.retention').write(cr, uid, [ret.id, ], {'state':'canceled'}, context)
-                    #self.pool.get('account.retention').unlink(cr, uid, [ret.id, ], context)
+                    self.pool.get('ecua.retencion').write(cr, uid, [ret.id, ], {'state':'canceled'}, context)
+                    #self.pool.get('ecua.retencion').unlink(cr, uid, [ret.id, ], context)
         return True
 
         
     def button_aprove(self, cr, uid, ids, context=None):
         wf_service = netsvc.LocalService("workflow")
         for id in ids:
-            wf_service.trg_validate(uid, 'account.retention', id, 'approve_signal', cr)
+            wf_service.trg_validate(uid, 'ecua.retencion', id, 'approve_signal', cr)
         return True
     
     def button_cancel(self, cr, uid, ids, context=None):
         wf_service = netsvc.LocalService("workflow")
         for id in ids:
-            wf_service.trg_validate(uid, 'account.retention', id, 'canceled_signal', cr)
+            wf_service.trg_validate(uid, 'ecua.retencion', id, 'canceled_signal', cr)
         return True
     
     def button_set_draft(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'draft'})
         wf_service = netsvc.LocalService("workflow")
         for id in ids:
-            wf_service.trg_delete(uid, 'account.retention', id, cr)
-            wf_service.trg_create(uid, 'account.retention', id, cr)
-        return True
+            wf_service.trg_delete(uid, 'ecua.retencion', id, cr)
+            wf_service.trg_create(uid, 'ecua.retencion', id, cr)
+        return True    
+    
+    
 
-account_withhold()
+ecua_retencion()
+
+class ecua_retencion_line(osv.osv):
+    
+    """This have the lines of values retained"""
+    def _amount_retained(self, cr, uid, ids, field_name, arg, context=None):
+        cur_obj = self.pool.get('res.currency')
+        res = {}
+        for line in self.browse(cr, uid, ids, context=context):
+            value_retined = float(line.tax_base * (line.retention_percentage/100))
+            cur = self.pool.get('res.users').browse(cr, uid, [uid,], context)[0]['company_id']['currency_id']
+            res[line.id] = cur_obj.round(cr, uid, cur, value_retined)
+        return res
+    
+    def _amount_retained_manual(self, cr, uid, ids, field_name, arg, context=None):
+        cur_obj = self.pool.get('res.currency')
+        res = {}
+        for line in self.browse(cr, uid, ids, context=context):
+            value_retined = float(line.tax_base * (line.retention_percentage_manual/100))
+            cur = self.pool.get('res.users').browse(cr, uid, [uid,], context)[0]['company_id']['currency_id']
+            res[line.id] = cur_obj.round(cr, uid, cur, value_retined)
+        return res
+
+    def _percentaje_retained(self, cr, uid, ids, field_name, arg, context=None):
+        res = {}
+        #tax_code = self.pool.get('account.tax.code').browse(cr, uid, ids, context)[0]['code']
+        for line in self.browse(cr, uid, ids, context=context):
+            tax_code_id = self.pool.get('account.tax.code').search(cr, uid, [('id', '=', line.tax_id.id)])
+            tax_code = None
+            if tax_code_id:
+                tax_code = self.pool.get('account.tax.code').browse(cr, uid, tax_code_id, context)[0]['code']
+            tax_obj = self.pool.get('account.tax')
+            tax = tax_obj.search(cr, uid, [('tax_code_id', '=', tax_code), ('child_ids','=',False)])
+            if line.description=="renta":
+                tax = tax_obj.search(cr, uid, [('base_code_id', '=', tax_code), ('child_ids','=',False)])
+            porcentaje= (tax_obj.browse(cr, uid, tax, context)[0]['amount'])*(-100)
+            res[line.id]=porcentaje
+        return res
+    
+
+    def validar_description(self ,cr, id, ids, context=None):
+        for ref in self.browse(cr,id,ids,context=None):
+            if (ref['description']=='iva'):
+                if ref['tax_id']['code']['type_ec']=='iva':
+                    return True
+                else:
+                    return False
+            elif (ref['description']=='renta'):
+                if ref['tax_id']['code']['type_ec']=='renta':
+                    return True
+                else:
+                    return False
+
+    def _get_date(self, cr, uid, ids, field_names, arg, context=None):
+        res = {}
+        for line in self.browse(cr, uid, ids, context):
+            if line.retention_id:
+                res[line.id] = line.retention_id.creation_date
+            elif line.invoice_without_retention_id:
+                res[line.id] = line.invoice_without_retention_id.date_invoice
+        return res
+    
+    def _get_invoice(self, cr, uid, ids, field_names, arg, context=None):
+        res = {}
+        for line in self.browse(cr, uid, ids, context):
+            if line.invoice_retention_id:
+                res[line.id] = line.invoice_retention_id.id
+            elif line.invoice_without_retention_id:
+                res[line.id] = line.invoice_without_retention_id.id
+        return res
+    
+    _name= 'ecua.retencion.line'
+    
+    _columns = {
+        'fiscalyear_id': fields.many2one('account.fiscalyear', 'Fiscal Year', required=True),
+        'description': fields.selection([('iva', 'IVA'),('renta', 'RENTA'),('divisas', 'DIVISAS'),], 'Impuesto', required=True),
+        'tax_id':fields.many2one('account.tax.code', 'Tax Code'), 
+        'tax_base': fields.float('Tax Base', digits_compute=dp.get_precision('Account')),
+        'retention_percentage_manual': fields.float('Percentaje Value', digits_compute=dp.get_precision('Account')), 
+        'retained_value_manual': fields.function(_amount_retained_manual, method=True, type='float', string='Reatained Value',
+                                          store={
+                                                 'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage_manual'], 10)},), 
+        'retention_percentage': fields.function(_percentaje_retained, method=True, type='float', string='Percentaje Value',
+                                          store={
+                                                 'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_id',], 1)},),
+        'retained_value': fields.function(_amount_retained, method=True, type='float', string='Reatained Value',
+                                          store={
+                                                 'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage'], 10)},), 
+        'sequence': fields.integer('Sequence'),
+        'retention_id': fields.many2one('ecua.retencion', 'Retention', ondelete='cascade'),
+        'creation_date_retention': fields.related('retention_id','creation_date', type='date', relation='ecua.retencion', string='Creation Date'), 
+        'creation_date_invoice': fields.date('Creation Date'),
+        'creation_date': fields.function(_get_date, method=True, store=True, string='Creation Date', type="date"), 
+        'invoice_retention_id': fields.related('retention_id','invoice_id', type='many2one', relation='account.invoice', string='Invoice'), 
+        'invoice_without_retention_id':fields.many2one('account.invoice', 'Document', required=False, ondelete="cascade"), 
+        'invoice_id': fields.function(_get_invoice, method=True, store=True, string='Document', type="many2one", relation="account.invoice"), 
+        'partner_id': fields.related('invoice_id', 'partner_id', type='many2one', relation='res.partner', string='Partner', store=True), 
+        'period_id': fields.related('invoice_id', 'period_id', type='many2one', relation='account.period', string='Period', store=True), 
+        'company_id': fields.related('invoice_id','company_id', type='many2one', relation='res.company', string='Company'),
+        }
+    
+    _rec_name='sequence'
+    
+ecua_retencion_line()

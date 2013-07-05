@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #############################################################################
 #     OpenERP, Open Source Management Solution                              #
-#     Copyright (C) 2013  ed.winTG, www.itx.ec                              #
+#     Copyright (C) 2013  ed.winTG, www.syscod.com                          #
 #                                                                           #
 #    This program is free software: you can redistribute it and/or modify   #
 #    it under the terms of the GNU General Public License as published by   #
@@ -18,4 +18,7 @@
 #############################################################################
 
 import doc_complements
-
+import ndc
+import ndd
+import retencion
+import invoice
