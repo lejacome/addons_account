@@ -9,7 +9,7 @@
         <field name="model">ecua.ndd</field>
         <field name="priority" eval="1"/> <!-- ?? -->
         <field name="arch" type="xml">
-        <tree string="Notas">
+        <tree colors="blue:state == 'draft';gray:state == 'cancel';red:audit" string="Notas">
             <field name="doc_number" string="Num. Nota de débito"/>
             <field name="denominacion"/>
             <field name="num_comprob_venta" string="Doc. Modificado"/>
@@ -18,6 +18,7 @@
             <field name="autoriza_date_emision" string="Emitido"/>
             <field name="autoriza_date_expire" string="Expira"/>
             <field name="ndd_concept"/>
+            <field name="audit" invisible="0"/>
        </tree>
        </field>
     </record>
@@ -26,9 +27,14 @@
         <field name="name">ecua.ndd.form.view</field>
         <field name="type">form</field>
         <field name="model">ecua.ndd</field>
-        <field name="priority" eval="1"/> <!-- ?? -->
         <field name="arch" type="xml">
-        <form string="Nota">
+        <form string="Nota" version="7.0">
+                      <header>
+                      <button name="do_payment" type="object" string="Do Payment" states="draft" class="oe_highlight"/>
+                      <button name="cancel_payment" string="Cancel Payment" type="object" states="posted" confirm="Are you sure you want to unreconcile this record?"/>
+                      <button name="action_cancel_draft" type="object" states="cancel" string="Set to Draft"/>
+                      <field name="state" widget="statusbar" statusbar_visible="draft,posted" statusbar_colors='{"proforma":"blue"}'/>
+                      </header>
         			<group colspan="3" col="2">
         					<field name="nom_comercial" readonly="1"/>
         					<field name="razon_social" string="Razón Social" readonly="1"/>
@@ -43,10 +49,15 @@
         					<field name="num_atoriza" string="Autorización" select="2" readonly="1"/>	
         					<field name="autoriza_date_emision" string="Fecha autorizacón" readonly="1"/>			
         			</group>
+
+                    <group>
                     <field name="tipo_comprob_venta" select="2"/>
                     <field name="shop_id" invisible="1"/>
                     <field name="company_id" invisible="1" />
                     <field name="journal_id" select="2"/> 
+                    <field name="period_id" select="2"/>
+                    <field name="partner_id" select="2"/>
+                    <field name="audit"/>         
                     <newline/>
                     <field name="num_comprob_venta" on_change="onChange_comprobante(num_comprob_venta)" select="2" colspan="4" string="Número"/>        		
                     <field name="customer_name" select="2"/>
@@ -60,8 +71,10 @@
                                 <tree string="Lineas-Nota de Débito" editable="bottom">
                                    <field name="motivo_modifica"/>
                                    <field name="valor_modifica"/>
+                                   <field name="invoice_line_tax_id" widget="many2many_tags"/>
                                </tree> 
                     </field>
+                    </group>
                     <group colspan="3" col="2">
                     	<field name="autoriza_date_expire" string="Expira"/>
                     </group>

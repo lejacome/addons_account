@@ -50,13 +50,13 @@ class ecua_ndd(osv.osv):
                 ('error','Error de Facturacion'),
                 ('interes','Intereses'),
                 ('flete','Gastos por fletes'),
-                ('banco','Gastos bancarios')],'Concepto', select=True),           
-             
+                ('banco','Gastos bancarios')],'Concepto', select=True),
              }
 
     _defaults = {'company_id':_default_company,
                  'denominacion': 'Debit Note',
                  'is_ndd': lambda *a: 1, 
+                 'state': 'draft',
                }
     
     def onChange_comprobante(self, cr, uid, ids, comprobante_id, context=None):
@@ -194,6 +194,153 @@ class ecua_ndd(osv.osv):
                     values['fecha_emision'] = time.strftime('%Y-%m-%d')
                     values['denominacion']='Nota de debito'
         return values
+    
+    
+
+    def do_payment(self, cr, uid, ids, data, context=None):
+        import pdb
+        if context is None:
+            context = {}
+        move_pool = self.pool.get('account.move')
+        move_line_pool = self.pool.get('account.move.line')
+        journal_pool = self.pool.get('account.journal')
+        period_pool = self.pool.get('account.period')
+        timenow = time.strftime('%Y-%m-%d')
+        for slip in self.browse(cr, uid, ids, context=context):
+            journal_id = slip.journal_id.id
+            move_line_ids = []
+            debit_sum = 0.0
+            credit_sum = 0.0
+            journal = journal_pool.browse(cr, uid, journal_id, context=context)
+            if not slip.period_id:
+                search_periods = period_pool.find(cr, uid, slip.date_to, context=context)
+                period_id = search_periods[0]
+            else:
+                period_id = slip.period_id.id
+
+            #default_partner_id = slip.employee_id.address_home_id.id
+            #name = _('Payslip of %s') % (slip.partner_id.name) #employee_id
+            name = ('Nota de Debito por %s') % (slip.ndd_concept)
+            move = {
+                'narration': name,
+                'date': timenow,
+                'ref': slip.doc_number,
+                'journal_id': slip.journal_id.id,
+                'period_id': period_id,
+            }
+            for line in slip.ndd_line_ids:
+                amt = slip.valor_total and -line.valor_modifica or line.valor_modifica
+                # partner_id = line.salary_rule_id.register_id.partner_id and line.salary_rule_id.register_id.partner_id.id or default_partner_id
+                partner_id = slip.partner_id.id
+                #debit_account_id = line.salary_rule_id.account_debit.id
+                #credit_account_id = line.salary_rule_id.account_credit.id
+                debit_account_id = slip.journal_id.default_debit_account_id.id
+                credit_account_id = slip.journal_id.default_credit_account_id.id
+                if debit_account_id:
+
+                    debit_line = (0, 0, {
+                    #'name': line.name,
+                    'name': line.motivo_modifica,
+                    'date': timenow,
+                    'partner_id': slip.partner_id.id,
+                    'account_id': debit_account_id,
+                    'journal_id': slip.journal_id.id,
+                    'period_id': period_id,
+                    'debit': amt > 0.0 and amt or 0.0,
+                    'credit': amt < 0.0 and -amt or 0.0,
+                    #'analytic_account_id': line.salary_rule_id.analytic_account_id and line.salary_rule_id.analytic_account_id.id or False,
+                    #'tax_code_id': line.salary_rule_id.account_tax_id and line.salary_rule_id.account_tax_id.id or False,
+                    #'tax_amount': line.salary_rule_id.account_tax_id and amt or 0.0,
+                })
+                    move_line_ids.append(debit_line)
+                    debit_sum += debit_line[2]['debit'] - debit_line[2]['credit']
+                if credit_account_id:
+
+                    credit_line = (0, 0, {
+                    #'name': line.name,
+                    'name': line.motivo_modifica,
+                    'date': timenow,
+                    'partner_id': slip.partner_id.id,
+                    'account_id': credit_account_id,
+                    'journal_id': slip.journal_id.id,
+                    'period_id': period_id,
+                    'debit': amt < 0.0 and -amt or 0.0,
+                    'credit': amt > 0.0 and amt or 0.0,
+                    #'analytic_account_id': line.salary_rule_id.analytic_account_id and line.salary_rule_id.analytic_account_id.id or False,
+                    #'tax_code_id': line.salary_rule_id.account_tax_id and line.salary_rule_id.account_tax_id.id or False,
+                    #'tax_amount': line.salary_rule_id.account_tax_id and amt or 0.0,
+                })
+                    move_line_ids.append(credit_line)
+                    credit_sum += credit_line[2]['credit'] - credit_line[2]['debit']
+            if debit_sum > credit_sum:
+                acc_id = slip.journal_id.default_credit_account_id.id
+                if not acc_id:
+                    raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Credit Account!')%(slip.journal_id.name))
+                adjust_credit = (0, 0, {
+                    'name': _('Adjustment Entry'),
+                    'date': timenow,
+                    'partner_id': False,
+                    'account_id': acc_id,
+                    'journal_id': slip.journal_id.id,
+                    'period_id': period_id,
+                    'debit': 0.0,
+                    'credit': debit_sum - credit_sum,
+                })
+                move_line_ids.append(adjust_credit)
+
+            elif debit_sum < credit_sum:
+                acc_id = slip.journal_id.default_debit_account_id.id
+                if not acc_id:
+                    raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Debit Account!')%(slip.journal_id.name))
+                adjust_debit = (0, 0, {
+                    'name': _('Adjustment Entry'),
+                    'date': timenow,
+                    'partner_id': False,
+                    'account_id': acc_id,
+                    'journal_id': slip.journal_id.id,
+                    'period_id': period_id,
+                    'debit': credit_sum - debit_sum,
+                    'credit': 0.0,
+                })
+                move_line_ids.append(adjust_debit)
+            move.update({'line_id': move_line_ids})
+            move_id = move_pool.create(cr, uid, move, context=context)
+            pdb.set_trace()
+            self.write(cr, uid, [slip.id], {'move_id': move_id, 'period_id' : period_id}, context=context)
+            if slip.journal_id.entry_posted: 
+                move_pool.post(cr, uid, [move_id], context=context) #omitir estado borrador
+        self.write(cr, uid, ids, {'state':'posted'})
+        return False
+
+    def cancel_payment(self, cr, uid, ids, data, context=None):
+        reconcile_pool = self.pool.get('account.move.reconcile')
+        move_pool = self.pool.get('account.move')
+        import pdb
+        pdb.set_trace()
+        for voucher in self.browse(cr, uid, ids, context=context):
+            recs = []
+            for line in voucher.move_ids:
+                if line.reconcile_id:
+                    recs += [line.reconcile_id.id]
+                if line.reconcile_partial_id:
+                    recs += [line.reconcile_partial_id.id]
+
+            reconcile_pool.unlink(cr, uid, recs)
+
+            if voucher.move_id:
+                move_pool.button_cancel(cr, uid, [voucher.move_id.id])
+                move_pool.unlink(cr, uid, [voucher.move_id.id])
+        res = {
+            'state':'cancel',
+            'move_id':False,
+        }
+        self.write(cr, uid, ids, res)
+        return True
+    
+    def action_cancel_draft(self, cr, uid, ids, context=None):
+        self.write(cr, uid, ids, {'state':'draft'})
+        return True
+
 ecua_ndd()
 
 class ecua_ndd_line(osv.osv):
@@ -204,6 +351,7 @@ class ecua_ndd_line(osv.osv):
                 'ecua_ndd_id':fields.many2one('ecua.ndd','Nota'),
                 'motivo_modifica':fields.char('Motivo', size=64,required=True),
                 'valor_modifica':fields.float('Valor a modificar', required=True),
+                'invoice_line_tax_id': fields.many2many('account.tax', 'account_invoice_line_tax_nd', 'invoice_line_id', 'tax_id', 'Taxes'),
                 'iva12':fields.integer('IVA', readonly=True),
                 'iva0':fields.integer('IVA', readonly=True),
                 'valor_total':fields.float('Valor total'),                
@@ -211,6 +359,8 @@ class ecua_ndd_line(osv.osv):
     
     def onchange_impuestos_ids(self, cr, uid, ids, comprobante_id, context=None):
         return True
+    
+    
     def calcula_ndd(self, cr, uid, ids, comprobante_id, context=None):
         return True
     

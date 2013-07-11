@@ -21,7 +21,7 @@
     "author" : "SYSCOD Inc, syscod.comyr.com",
     "website" : "http://www.syscod.comyr.com/",
     "category" : "Regulación ecuatoriana",
-    "depends" : ['base','ec_sri','ec_ruc'],
+    "depends" : ['base','ec_sri','ec_ruc','ec_niff'],
     "description": """
     Afecta a facturas, mediante el uso de documentos legales autorizados por el SRI:
     Retenciones:
