@@ -10,13 +10,18 @@
         <field name="inherit_id" ref="account.invoice_form" />
         <field name="priority" eval="1"/> <!-- ?? -->
         <field name="arch" type="xml">
+        <header position="inside">
+        <button name="%(action_retention_wizard_sales)d" string="Registrar Retención"
+				type="action" icon="terp-gtk-jump-to-ltr" attrs="{'invisible':[('retention_ids','!=',[])]}"
+				context="{'sales': True}" />
+        </header>
          <notebook position="inside">
         			<page string="Retenciones">
 								<field name="retention_ids" nolabel="1" readonly="1"
 									widget="one2many" colspan="4"/>
 								 <field name="retention_ids" nolabel="1" readonly="1"
 									widget="one2many" colspan="4"
-									context="{'form_view_ref' : 'ecua_retenciones_manual.view_account_retention_purchase_form'}">
+									context="{'form_view_ref' : 'view_retention_compra_form'}">
 									<tree string="Withholdings">
 										<field name="doc_number" />
 										<field name="period_id" />
@@ -54,8 +59,8 @@
 									domain="[('state', '=', 'paid'),('type','=','out_refund')]"
 									context="{'type':'out_refund', 
                                                        'journal_type':'sale_refund', 
-                                                       'tree_view_ref' : 'ecua_documentos_sri.credit_note_out_tree',
-                                                       'form_view_ref' : 'ecua_documentos_sri.customer_credit_note_invoice_view_form'}" />
+                                                       'tree_view_ref' : 'view_ecua_ndc_tree',
+                                                       'form_view_ref' : 'view_ecua_ndc_form'}" />
 							</page> 
 						    <page string="Debit Notes">
 								<field name="debit_note_ids" nolabel="1" colspan="4"
@@ -63,8 +68,8 @@
 									domain="[('state', '=', 'paid'),('type','=','out_refund')]"
 									context="{'type':'out_refund', 
                                                        'journal_type':'sale_refund', 
-                                                       'tree_view_ref' : 'ecua_documentos_sri.credit_note_out_tree',
-                                                       'form_view_ref' : 'ecua_documentos_sri.customer_credit_note_invoice_view_form'}" />
+                                                       'tree_view_ref' : 'view_ecua_ndd_form',
+                                                       'form_view_ref' : 'view_ecua_ndd_form'}" />
 							</page>
 					</notebook>     
        		</field>

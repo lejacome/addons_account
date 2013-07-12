@@ -9,10 +9,9 @@
 				<form string="Withhold">
 					<field name="shop_id" />
 					<field name="printer_id" />
-					<field name="number_purchase" select="1"
-						attrs="{'readonly':[('automatic','=',True)]}" />
+					<field name="number_purchase" select="1" />
 					<field name="creation_date" />
-					<field name="transaction_type" select="1" invisible="1" />
+					<field name="transaction_type" select="1" />
 					<field name="automatic" invisible="1" />
 					<field name="authorization_purchase_id" string="Authorization"
 						select="1" readonly="1" />
@@ -33,13 +32,15 @@
 					</field>
 			 		<group col="6" colspan="4">
 						<field name="state" string='State' />
-						<button name="button_aprove" states="draft" string="Approved"
-							icon="gtk-go-forward" type="object" />
-						<button name="button_cancel" states="approved" string="Cancel"
+						<button name="approve_signal" states="draft" string="Aprobar1"
+							icon="gtk-go-forward"/>
+						<button name="button_aprove" states="draft" string="Aprobar"
+							icon="gtk-go-forward" type="object" />									
+						<button name="button_cancel" states="approved" string="Cancelar"
 							groups="account.group_account_manager" icon="gtk-cancel" type="object" />
-						<button name="button_set_draft" states="canceled" string="Set to draft"
+						<button name="button_set_draft" states="canceled" string="A borrador"
 							icon="terp-stock_effects-object-colorize" type="object" />
-						<button name="%(ec_sri.withhold_report)d" string="Print Withhold"
+						<button name="%(retencion_report)d" string="Imprimir"
 							type="action" icon="gtk-print" states="approved" />
 					</group> 
 				</form>
@@ -82,11 +83,11 @@
 					</field> 
 					<group col="6" colspan="4">
 						<field name="state" string='State' />
-						<button name="button_aprove" states="draft" string="Approved"
+						<button name="button_aprove" states="draft" string="Aprobar"
 							icon="gtk-go-forward" type="object" />
-						<button name="button_cancel" states="approved" string="Cancel"
+						<button name="button_cancel" states="approved" string="Cancelar"
 							icon="gtk-cancel" type="object" />
-						<button name="button_set_draft" states="canceled" string="Set to draft"
+						<button name="button_set_draft" states="canceled" string="A Borrador"
 							icon="terp-stock_effects-object-colorize" type="object" />
 					</group>
 				</form>
@@ -154,6 +155,7 @@
 			<field name="domain">[('transaction_type','=','sale')]</field>
 			<field name="view_type">form</field>
 			<field name="search_view_id" ref="account_retention_filter_view"/>
+			<field name="context">{'form_view_ref' : 'view_account_retention_sale_form'}</field>
 			<field name="view_mode">tree,form</field>
 			<field name="view_id" eval="False" />
 		</record>
@@ -172,8 +174,8 @@
 			<field name="act_window_id" ref="action_account_retention_sale" />
 		</record>
 
-		<menuitem name="Retenciones de venta" id="retenciones_ventas"
-			parent="ec_sri.sri_menu" action="action_account_retention_sale" />
+		<menuitem name="Retenciones" id="retenciones_ventas"
+			parent="account.menu_finance_receivables"  action="action_account_retention_sale" />
 
 		<record model="ir.actions.act_window" id="action_account_retention_purchase">
 			<field name="name">Withhold of Purchases</field>
@@ -198,8 +200,8 @@
 			<field name="act_window_id" ref="action_account_retention_purchase" />
 		</record>
 
-		<menuitem name="Retenciones de compras" id="retenciones_compras"
-			parent="ec_sri.sri_menu" action="action_account_retention_purchase" />
+		<menuitem name="Retenciones" id="retenciones_compras"
+			parent="account.menu_finance_payables" action="action_account_retention_purchase" />
 
 		<record model="ir.ui.view" id="retention_line_form_view">
 			<field name="name">ecua.retencion.line.form</field>
@@ -303,6 +305,6 @@
 		</record>
 	<!-- Retenciones MENU--> 	
 			<menuitem id="ecua_retencion_line_menu" name="Retenciones en lineas de compra"
-			parent="ec_sri.sri_menu" action="action_account_retention_line_tree_view" /> 
+			parent="account.menu_finance_payables" action="action_account_retention_line_tree_view" /> 
 	</data>
 </openerp>

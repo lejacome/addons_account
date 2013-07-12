@@ -61,7 +61,46 @@ class ecua_retencion(osv.osv):
         partner_obj = self.pool.get('res.partner')
         for data in self.browse(cr, uid, ids):
             return partner_obj.check_ced(data.ruc).get('valid', False)
-    
+        
+        
+    def default_get(self, cr, uid, fields_list, context=None):
+        #import pdb
+        #pdb.set_trace()
+        if context is None:
+            context = {}
+        doc_obj=self.pool.get('sri.type.document')
+        values={}
+        if not values:
+            values={}
+        curr_user = self.pool.get('res.users').browse(cr, uid, uid, context)
+        values['ruc'] = curr_user.company_id.ruc
+        printer = None
+        if curr_user.printer_default_id:
+            printer = curr_user.printer_default_id
+        if not printer:
+            for shop in curr_user.shop_ids:
+                for printer_id in shop.printer_point_ids:
+                    printer = printer_id
+                    break
+        if printer:
+            values['shop_id'] = printer.shop_id.id
+            values['printer_id'] = printer.id
+            auth_line_id = doc_obj.search(cr, uid, [('name','=','withholding'), ('printer_id','=',printer.id), ('state','=',True)])
+            if not auth_line_id:
+                raise osv.except_osv(_('Error!'), _('No existe autorización activa para generar retenciones'))
+            if auth_line_id:
+                auth_line = doc_obj.browse(cr, uid, auth_line_id[0],context)
+                values['authorization_purchase_id'] = auth_line.sri_authorization_id.id
+                values['autoriza_date_emision'] = auth_line.sri_authorization_id.start_date
+                values['autoriza_date_expire'] = auth_line.sri_authorization_id.expiration_date
+                values['doc_number'] = doc_obj.get_next_value_secuence(cr, uid, 'withholding', False, printer.id, 'ecua.retencion', 'doc_number', context)
+                values['number_purchase']=values['doc_number']
+                values['creation_date'] = time.strftime('%Y-%m-%d')
+                values['transaction_type']='purchase'
+                values['state']='draft'
+        return values
+        
+            
     def _default_company(self, cr, uid, context=None):
         user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
         return user.company_id and user.company_id.id or False
@@ -128,16 +167,18 @@ class ecua_retencion(osv.osv):
         
     _columns = {                 
         'doc_number': fields.char('Number', size=17, required=False, states={'approved':[('readonly',True)]}),
-        'number_purchase': fields.char('Retention Number', size=17, required=False, readonly=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
+        'number_purchase': fields.char('Retention Number', size=17, required=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
         'number_sale': fields.char('Retention Number', size=17, required=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
         'creation_date': fields.date('Creation Date',states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),
         'authorization_purchase_id':fields.many2one('sri.authorization', 'Authorization', required=False, readonly=True),
         'authorization_sale_id':fields.many2one('sri.authorization.supplier', 'Authorization', ),
-        'authorization_sale':fields.char('Authorization', size=10, required=False, readonly=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}, help='This Number is necesary for SRI reports'),        
+        'authorization_sale':fields.char('Authorization', size=10, required=False, readonly=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}, help='This Number is necesary for SRI reports'),
+        'autoriza_date_emision':fields.date('Fecha emision', readonly=True),
+        'autoriza_date_expire':fields.date('Fecha caducidad', readonly=True),        
         'transaction_type':fields.selection([
             ('purchase','Compras'),
             ('sale','Ventas'),
-            ],  'Transaction type', required=True, readonly=True),
+            ],  'Transaction type', required=True),
         'retention_line_ids': fields.one2many('ecua.retencion.line', 'retention_id', 'Retention Lines',states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}),   
         'invoice_id': fields.many2one('account.invoice', 'Number of document', required=False, states={'approved':[('readonly',True)], 'canceled':[('readonly',True)]}, ondelete='cascade'),
         'partner_id': fields.related('invoice_id','partner_id', type='many2one', relation='res.partner', string='Partner', store=True), 
@@ -146,7 +187,7 @@ class ecua_retencion(osv.osv):
             ('draft','Draft'),
             ('approved','Approved'),
             ('canceled','Canceled'),
-            ],  'State', required=True, readonly=True),
+            ],  'State', required=True),
         'total': fields.function(_total, method=True, type='float', string='Total Retenido', store = {
                                  'ecua.retencion': (lambda self, cr, uid, ids, c={}: ids, ['retention_line_ids'], 11),
                                  'ecua.lineas.retencion': (_get_retention, ['tax_base', 'retention_percentage', 'retained_value',], 11),
@@ -175,7 +216,7 @@ class ecua_retencion(osv.osv):
     _defaults = {
                  'doc_number': '',
                  'transaction_type': lambda *a: 'sale',
-                 'state': lambda *a: 'draft',
+                 'state': 'draft',
                  }
 
     def unlink(self, cr, uid, ids, context=None):
@@ -401,6 +442,8 @@ class ecua_retencion(osv.osv):
         acc_move_line_obj = self.pool.get('account.move.line')
         ret_line_obj = self.pool.get('ecua.retencion.line')
         period_obj = self.pool.get('account.period')
+        import pdb
+        pdb.set_trace()
         company = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id
         journal_iva = company.journal_iva_id
         journal_ir = company.journal_ir_id
@@ -410,6 +453,7 @@ class ecua_retencion(osv.osv):
             raise osv.except_osv('Error!', _("IR Retention Journal doesn't have debit account assigned!, can't complete operation"))
         currency_pool = self.pool.get('res.currency')
         ret_obj = self.pool.get('ecua.retencion')
+       
         for ret in self.browse(cr,uid,ids,context=None):
             #lineas contables no conciliadas que pertenecen a la factura
             day = datetime.timedelta(days=5)
@@ -597,16 +641,24 @@ class ecua_retencion(osv.osv):
 
         
     def button_aprove(self, cr, uid, ids, context=None):
+        #import pdb
+        #pdb.set_trace()
         wf_service = netsvc.LocalService("workflow")
         for id in ids:
             wf_service.trg_validate(uid, 'ecua.retencion', id, 'approve_signal', cr)
         return True
     
     def button_cancel(self, cr, uid, ids, context=None):
+       
         wf_service = netsvc.LocalService("workflow")
         for id in ids:
             wf_service.trg_validate(uid, 'ecua.retencion', id, 'canceled_signal', cr)
         return True
+    
+    def action_draft(self, cr, uid, ids, context=None):
+        
+        self.write(cr, uid, ids, {'state':'draft'})
+        return True    
     
     def button_set_draft(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'draft'})

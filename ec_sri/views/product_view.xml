@@ -78,7 +78,7 @@
 		</record>
 
 		<menuitem id="account_ice_type_menu" name="ICE Codes"
-			parent="ecua_documentos_sri.sri_configuration" action="action_account_ice_type_tree_view" />
+			parent="ec_sri.sri_configuration" action="action_account_ice_type_tree_view" />
 
 
 	</data>

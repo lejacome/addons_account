@@ -23,15 +23,17 @@ import re
 class authorization_supplier(osv.osv):
     
     def _get_name(self, cr, uid, context=None):
+        #import pdb
+        #pdb.set_trace()
         if not context:
             context = {}
         output = []
         if not context.get('document_type', False):
-            module_ids = self.pool.get('ir.module.module').search(cr, uid, [('name','like','ecua')])
+            module_ids = self.pool.get('ir.module.module').search(cr, uid, [('name','like','ec_')])
             module = self.pool.get('ir.module.module').browse(cr, uid, module_ids, context)
             for mod in module:
                 if mod['state']=='installed':
-                    if mod['name'] == 'ecua_documentos_sri':
+                    if mod['name'] == 'ec_sri':
                         output.append(('invoice',_('Invoice')))
                         output.append(('delivery_note',_('Delivery_note')))
                         output.append(('withholding',_('Withholding')))

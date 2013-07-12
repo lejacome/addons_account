@@ -26,8 +26,8 @@
 							groups="base.group_user" />
 						<button name="invoice_proforma2" states="draft" string="PRO-FORMA"
 							groups="account.group_proforma_invoices" />
-						<button name="%(action_account_credit_note_options)d" type='action'
-							string='Nota de Crédito' states='open,proforma2,paid' groups="base.group_user" />
+						<!-- <button name="%(action_account_credit_note_options)d" type='action'
+							string='Nota de Crédito' states='open,proforma2,paid' groups="base.group_user" /> -->
 						<button name="invoice_cancel" states="draft,proforma2,open"
 							string="Cancel" groups="base.group_no_one" />
 						<button name="action_cancel_draft" states="cancel" string="Reset to Draft"
@@ -37,9 +37,9 @@
 							groups="account.group_account_invoice,account.group_account_manager"
 							attrs="{'invisible':['|', ('state','&lt;&gt;','paid'), ('reconciled', '=', True)]}"
 							help="This button only appears when the state of the invoice is 'paid' (showing that it has been fully reconciled) and auto-computed boolean 'reconciled' is False (depicting that it's not the case anymore). In other words, the invoice has been dereconciled and it does not fit anymore the 'paid' state. You should press this button to re-open it and let it continue its normal process after having resolved the eventual exceptions it may have created." />
-						<button name="%(action_retention_wizard_sales)d" string="Datos de Retención"
+						<!-- <button name="%(action_retention_wizard_sales)d" string="Datos de Retención"
 							type="action" icon="terp-gtk-jump-to-ltr" attrs="{'invisible':[('retention_ids','!=',[])]}"
-							context="{'sales': True}" />
+							context="{'sales': True}" /> -->
 						<button name="%(action_account_invoice_print_options)d"
 							string="Print Invoice" type="action" icon="gtk-print" states="open,paid" />
 						<field name="state" widget="statusbar" nolabel="1"

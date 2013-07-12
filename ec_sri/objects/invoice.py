@@ -112,6 +112,8 @@ class account_invoice(osv.osv):
         return {'value': values, 'domain':domain, 'warning': warning}
 
     def default_get(self, cr, uid, fields_list, context=None):
+        #import pdb
+        #pdb.set_trace()
         if context is None:
             context = {}
         printer_obj = self.pool.get('sri.printer.point')
@@ -142,10 +144,12 @@ class account_invoice(osv.osv):
                     auth_line = doc_obj.browse(cr, uid, auth_line_id[0],context)
                     values['authorization'] = auth_line.sri_authorization_id.number
                     values['authorization_sales'] = auth_line.sri_authorization_id.id
+                    values['autoriza_date_emision'] = auth_line.sri_authorization_id.start_date
+                    values['autoriza_date_expire'] = auth_line.sri_authorization_id.expiration_date
                     #if automatic:
                         #values['automatic_number'] = doc_obj.get_next_value_secuence(cr, uid, 'invoice', False, printer.id, 'account.invoice', 'invoice_number_out', context)
                     values['invoice_number_out'] = doc_obj.get_next_value_secuence(cr, uid, 'invoice', False, printer.id, 'account.invoice', 'invoice_number_out', context) 
-                        #values['automatic_number']=values['invoice_number_out']
+                    values['automatic_number']=values['invoice_number_out']
                     values['date_invoice'] = time.strftime('%Y-%m-%d')
         return values
 
@@ -415,12 +419,14 @@ class account_invoice(osv.osv):
     _inherit = "account.invoice"
         
     _columns = {
+                'autoriza_date_emision':fields.date('Fecha emision', readonly=True),
+                'autoriza_date_expire':fields.date('Fecha caducidad', readonly=True),#Hay que calcular y verificar cuantos dias tiene de validez
                 'automatic_number': fields.char('Number', size=17, readonly=True,),
                 'address_invoice':fields.char('Address', size=80,required=True, help='Address of provider or client generated automatic when it change.'),
                 'create_date': fields.date('Creation date', readonly=True),
                 'authorization_sales':fields.many2one('sri.authorization', 'Authorization', required=False),
                 #TODO: este campo debe ser calculado, funcionara de igual manera con los eventos onchange, pero se guardara segun sea el tipo de documento
-                'authorization':fields.char('Authorization', size=10, readonly=True),
+                'authorization':fields.char('Authorization', size=10),
                 'authorization_supplier_purchase_id':fields.many2one('sri.authorization.supplier', 'Authorization', readonly=True, states={'draft':[('readonly',False)]}), 
                 'authorization_purchase_id':fields.char('Authorization', size = 10, required=False, readonly=True, states={'draft':[('readonly',False)]}, help='This Number is necesary for SRI reports'),
                 'number': fields.function(_number, method=True, type='char', size=17, string='Invoice Number', store=True, help='Unique number of the invoice, computed automatically when the invoice is created in Sales.'),
@@ -887,6 +893,8 @@ class account_invoice(osv.osv):
                 'liquidation': 'LIQ-COMP: ',
                 }
         res = []
+        #import pdb
+        #pdb.set_trace()
         for r in self.read(cr, uid, ids, ['type', 'number', 'invoice_number_out', 'invoice_number_in', 'number_credit_note_in', 'number_credit_note_out','number_liquidation','name', 'liquidation'], context, load='_classic_write'):
             name = r['number'] or types[r['type']]  or ''
             if r['type'] == 'out_invoice':

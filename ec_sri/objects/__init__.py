@@ -27,7 +27,7 @@ import authorization
 import shop
 import document
 import user
-import withhold,withhold_line,voucher
+#import withhold,withhold_line,voucher
 import invoice,invoice_line,invoice_taxes
 import move,move_line
 import partner

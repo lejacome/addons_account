@@ -37,6 +37,8 @@
         'account_chart.xml',
         'account_tax.xml',
         'l10n_chart_ec_wizard.xml',
+        'views/l10n_chart_ec_niif_minimal_wizard.xml',
+        'views/account_tax_view.xml',
     ],
     'demo': [],
     'installable': True,

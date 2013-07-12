@@ -41,6 +41,9 @@ class res_company(osv.osv):
         return res
     
     _columns = {
+                #to manege the Retentions
+                'journal_iva_id':fields.many2one('account.journal', 'IVA Journal'), 
+                'journal_ir_id':fields.many2one('account.journal', 'IR Journal'), 
                 'has_auto_printer_auth': fields.function(_get_auto_printer_auth, method=True, type='boolean', string='Auto Impresor?', store=True),
                 'authotization_ids':fields.one2many('sri.authorization', 'company_id', 'SRI Authorizations', required=False),
                 'shop_ids':fields.one2many('sale.shop', 'company_id', 'Shops', required=False),

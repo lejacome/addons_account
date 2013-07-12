@@ -27,6 +27,10 @@ import addons.decimal_precision as dp
 from tools.translate import _
 import time
 
+#class account_tax(osv.osv):
+#    _inherit="account.tax"
+#    _columns = {                                
+#                }
 class account_invoice_tax(osv.osv):
     
     _inherit = "account.invoice.tax"
