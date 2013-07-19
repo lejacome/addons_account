@@ -386,7 +386,7 @@ class ecua_retencion(osv.osv):
 
                 if inv.tax_id and inv.type in ('sale', 'purchase'):
                     move_line.update({
-                        'account_tax_id': inv.tax_id.id,
+                        'account_tax_id': inv.tax_id.tax_code_id.id,
                     })
                 if move_line.get('account_tax_id', False):
                     tax_data = tax_obj.browse(cr, uid, [move_line['account_tax_id']], context=context)[0]
@@ -434,188 +434,585 @@ class ecua_retencion(osv.osv):
                 if len(rec_ids) >= 2:
                     move_line_pool.reconcile_partial(cr, uid, rec_ids)
         return True
-    
-    def action_aprove(self,cr,uid,ids,context=None):
-        document_obj = self.pool.get('sri.type.document')
-        acc_vou_obj = self.pool.get('account.voucher')
-        acc_vou_line_obj = self.pool.get('account.voucher.line')
-        acc_move_line_obj = self.pool.get('account.move.line')
+
+    def crear_asiento_enventas(self,cr,uid,ids,ret,context=None):
         ret_line_obj = self.pool.get('ecua.retencion.line')
-        period_obj = self.pool.get('account.period')
-        import pdb
-        pdb.set_trace()
+        ret_obj = self.pool.get('ecua.retencion')
         company = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id
         journal_iva = company.journal_iva_id
-        journal_ir = company.journal_ir_id
-        if not journal_iva.default_debit_account_id:
-            raise osv.except_osv('Error!', _("Iva Retention Journal doesn't have debit account assigned!, can't complete operation"))
-        if not journal_ir.default_debit_account_id:
-            raise osv.except_osv('Error!', _("IR Retention Journal doesn't have debit account assigned!, can't complete operation"))
-        currency_pool = self.pool.get('res.currency')
-        ret_obj = self.pool.get('ecua.retencion')
-       
-        for ret in self.browse(cr,uid,ids,context=None):
+        journal_ir = company.journal_ir_id      
+        #import pdb
+        #pdb.set_trace()
+        for retention in ret_obj.search(cr, uid, [('invoice_id.partner_id.id', '=', ret.invoice_id.partner_id.id), ('transaction_type','=','sale'), ('id','not in',tuple(ids))]):
+            if ret_obj.browse(cr, uid, [retention,], context)[0].number_sale == ret.number_sale:
+                raise osv.except_osv(_('Error!'), _("There is an retention with number %s of client %s") % (ret.number_sale, ret.invoice_id.partner_id.name))                                        
+                #se comprueba que la factura se encuentre abierta
+        if not ret.invoice_id.state == 'open':
+            raise osv.except_osv('Error!', "The invoice is not open, you cannot add a retention")
+                #Se verifica que el residuo de la factura no sea superior a lo que se va a retener
+        if ret.invoice_id.residual < ret.total:
+            raise osv.except_osv('Error!', "The residual value of invoice is lower than total value of withholding")
+                #Obtengo el periodo de la factura
+        period=ret.invoice_id.period_id.id                                
+                #Obtenemos las lineas de la retencion
+        line_ids = ret_line_obj.search(cr, uid, [('retention_id', '=', ret['id']),])
+        lines = ret_line_obj.browse(cr, uid, line_ids, context)
+                
+                #variable que guarda los ids de los voucher que se crean para su posterior uso desde retencion
+        move_line_ir = []
+        move_line_iva = []
+                #verifico que existan lineas de retencion            
+        if lines:
+            #Definimos cual sera la cabecera de las retenciones de iva                
+            name_iva = ('Retencion al IVA en ventas')
+            move_iva = {
+                        'narration': name_iva,
+                        'date': ret.creation_date,
+                        'ref': ret.number_purchase,
+                        'journal_id': journal_iva.id,
+                        'period_id': period,
+                        }
+            #Definimos cual sera la cabecera de las retenciones de renta
+            name_ir = ('Retencion al IR en ventas')
+            move_ir = {
+                        'narration': name_ir,
+                        'date': ret.creation_date,
+                        'ref': ret.number_purchase,
+                        'journal_id': journal_ir.id,
+                        'period_id': period,
+                        }                                
+                   
+                    #recorro cada linea de retencion
+                    #variables de control para verificar que existen lineas de cada tipo
+            renta = False
+            iva = False
+            debit_sum=credit_sum=credit_sum_ir=debit_sum_ir=0.0
+            for line in lines:
+                amt = line.retained_value
+                #verifico las lineas por tipo para seleccionar el diario correspondiente
+                if line.description == 'iva':
+                    debit_account_id_iva1=line.tax_id.account_collected_id #% de IVA cobrado en la Retencion
+                    if ret.invoice_id.tax_line:
+                        debit_account_id_iva2= ret.invoice_id.tax_line[0].account_id#  % de Impuesto cobrado en ventas
+                        #if ret.invoice_id.tax_line[1]: #Si tiene mas de un impuesto tendremos que realizar la retencion manualmente...xq no sabria con que diario hacer los moviemientos
+                        #    raise osv.except_osv(_('Error!'),_('La factura tiene mas de un impuesto, realice la rentención manualmente!. FAC: %s' )%(ret.invoice_id.invoice_number))                            
+                    else:
+                        raise osv.except_osv(_('Error!'), _("La factura no tiene un impuesto, revise la factura %s!")%(ret.invoice_id.invoice_number))                                        
+                    credit_account_id_iva1=journal_iva.default_credit_account_id #Iva pagado en retenciones
+                    credit_account_id_iva2=ret.invoice_id.account_id #Cuentas y documentos por cobrar                                                    
+                    if debit_account_id_iva1:
+                        vals_iva_line = (0, 0, {
+                                    'name': debit_account_id_iva1.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': debit_account_id_iva1.id,
+                                    'journal_id': journal_iva.id,
+                                    'period_id': period,
+                                    'debit': amt > 0.0 and amt or 0.0,
+                                    'credit': amt < 0.0 and -amt or 0.0,
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,
+                                    })
+                        move_line_iva.append(vals_iva_line)
+                        debit_sum += vals_iva_line[2]['debit'] - vals_iva_line[2]['credit']
+                    if credit_account_id_iva1:                                
+                        vals_iva_line = (0, 0, {
+                                    'name': credit_account_id_iva1.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': credit_account_id_iva1.id,
+                                    'journal_id': journal_iva.id,
+                                    'period_id': period,
+                                    'debit': amt < 0.0 and -amt or 0.0,
+                                    'credit': amt > 0.0 and amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_iva.append(vals_iva_line)
+                        credit_sum += vals_iva_line[2]['credit'] - vals_iva_line[2]['debit']
+                    if debit_account_id_iva2:
+                        vals_iva_line = (0, 0, {
+                                    'name': debit_account_id_iva2.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': debit_account_id_iva2.id,
+                                    'journal_id': journal_iva.id,
+                                    'period_id': period,
+                                    'debit': amt > 0.0 and amt or 0.0,
+                                    'credit': amt < 0.0 and -amt or 0.0,
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,
+                                    })
+                        move_line_iva.append(vals_iva_line)
+                        debit_sum += vals_iva_line[2]['debit'] - vals_iva_line[2]['credit']
+                    if credit_account_id_iva2:                                
+                        vals_iva_line = (0, 0, {
+                                    'name': credit_account_id_iva2.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': credit_account_id_iva2.id,
+                                    'journal_id': journal_iva.id,
+                                    'period_id': period,
+                                    'debit': amt < 0.0 and -amt or 0.0,
+                                    'credit': amt > 0.0 and amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_iva.append(vals_iva_line)
+                        credit_sum += vals_iva_line[2]['credit'] - vals_iva_line[2]['debit']
+                            #se cambia el valor de la variable ya que se encontro al menos una linea de retencion
+                        iva = True                            
+                if line.description == 'renta':
+                    debit_account_id_ir1=journal_iva.default_debit_account_id
+                    debit_account_id_ir2=ret.invoice_id.journal_id.default_debit_account_id
+                    credit_account_id_ir1=line.tax_id.account_collected_id
+                    credit_account_id_ir2=ret.invoice_id.account_id  
+                    if debit_account_id_ir1:                    
+                        vals_ir_line = (0, 0, {
+                                    'name': debit_account_id_ir1.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': debit_account_id_ir1.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt > 0.0 and amt or 0.0,
+                                    'credit': amt < 0.0 and -amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line)
+                        debit_sum_ir += vals_ir_line[2]['debit'] - vals_ir_line[2]['credit']
+                    if credit_account_id_ir1:                    
+                        vals_ir_line = (0, 0, {
+                                    'name': credit_account_id_ir1.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': credit_account_id_ir1.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt < 0.0 and -amt or 0.0,
+                                    'credit': amt > 0.0 and amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line)
+                        credit_sum_ir += vals_ir_line[2]['credit'] - vals_ir_line[2]['debit']
+                    if debit_account_id_ir2:                    
+                        vals_ir_line = (0, 0, {
+                                    'name': debit_account_id_ir2.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': debit_account_id_ir2.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt > 0.0 and amt or 0.0,
+                                    'credit': amt < 0.0 and -amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line)
+                        debit_sum_ir += vals_ir_line[2]['debit'] - vals_ir_line[2]['credit']
+                    if credit_account_id_ir2:                    
+                        vals_ir_line = (0, 0, {
+                                    'name': credit_account_id_ir2.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': credit_account_id_ir2.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt < 0.0 and -amt or 0.0,
+                                    'credit': amt > 0.0 and amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line)
+                        credit_sum_ir += vals_ir_line[2]['credit'] - vals_ir_line[2]['debit']
+                                #se cambia el valor de la variable ya que se encontro al menos una linea de retencion
+                        renta = True
+                if debit_sum > credit_sum:
+                    acc_id = journal_iva.default_credit_account_id.id
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Credit Account!')%(journal_iva.name))
+                    adjust_credit = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_iva.id,
+                                'period_id': period,
+                                'debit': 0.0,
+                                'credit': debit_sum - credit_sum,
+                            })
+                    move_line_iva.append(adjust_credit)
+                    acc_id = journal_ir.default_credit_account_id.id
+                elif debit_sum_ir > credit_sum_ir:
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Credit Account!')%(journal_ir.name))
+                    adjust_credit_ir = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_ir.id,
+                                'period_id': period,
+                                'debit': 0.0,
+                                'credit': debit_sum_ir - credit_sum_ir,
+                            })
+                    move_line_ir.append(adjust_credit_ir)
+            
+                elif debit_sum < credit_sum:
+                    acc_id = journal_iva.default_debit_account_id.id
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Debit Account!')%(journal_iva.name))
+                    adjust_debit = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_iva.id,
+                                'period_id': period,
+                                'debit': credit_sum - debit_sum,
+                                'credit': 0.0,
+                            })
+                    move_line_iva.append(adjust_debit)
+                    acc_id = journal_ir.default_debit_account_id.id
+                elif debit_sum_ir < credit_sum_ir: 
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Debit Account!')%(journal_ir.name))
+                    adjust_debit = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_ir.id,
+                                'period_id': period,
+                                'debit': credit_sum_ir - debit_sum_ir,
+                                'credit': 0.0,
+                            })
+                    move_line_ir.append(adjust_debit)
+                if iva == True:
+                    acc_move_obj = self.pool.get('account.move')    
+                    move_iva.update({'line_id': move_line_iva})
+                    move_id_iva = acc_move_obj.create(cr, uid, move_iva, context=context)
+                    self.write(cr, uid, [ret.id], {'move_id': move_id_iva, 'period_id' : period}, context=context)
+                    if journal_iva.entry_posted: 
+                        acc_move_obj.post(cr, uid, [move_id_iva], context=context) #omitir estado borrador
+                elif renta == True:                           
+                    acc_move_obj1= self.pool.get('account.move')            
+                    move_ir.update({'line_id': move_line_ir})
+                    move_id_ir = acc_move_obj1.create(cr, uid, move_ir, context=context)                        
+                    self.write(cr, uid, [ret.id], {'move_id': move_id_ir, 'period_id' : period}, context=context)                
+                    if journal_ir.entry_posted:
+                        acc_move_obj1.post(cr, uid, [move_id_ir], context=context) #omitir estado borrador
+            self.write(cr, uid, ids, {'state': 'approved'})
+            return False
+    
+    def crear_asiento_encompras(self,cr,uid,ids,ret,context=None):
+        ret_line_obj = self.pool.get('ecua.retencion.line')
+        company = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id        
+        journal_iva = company.journal_iva_id
+        journal_ir = company.journal_ir_id    
+        #se comprueba que la factura se encuentre abierta
+        if not ret.invoice_id.state == 'open':
+            raise osv.except_osv('Error!', "The invoice is not open, you cannot add a retention")
+                #Se verifica que el residuo de la factura no sea superior a lo que se va a retener
+        if ret.invoice_id.residual < ret.total:
+            raise osv.except_osv('Error!', "The residual value of invoice is lower than total value of retention")
+                #Obtengo el periodo de la factura
+        period=ret.invoice_id.period_id.id                                
+                #Obtenemos las lineas de la retencion
+        line_ids = ret_line_obj.search(cr, uid, [('retention_id', '=', ret['id']),])
+        lines = ret_line_obj.browse(cr, uid, line_ids, context)
+                
+        #variable que guarda los ids de los voucher que se crean para su posterior uso desde retencion
+        move_line_ir = []
+        move_line_iva = []
+        #verifico que existan lineas de retencion
+                
+        if lines:
+            #Definimos cual sera la cabecera de las retenciones de iva                
+            name_iva = ('Retencion al IVA en compras') #en este caso de compras
+            move_iva = {
+                        'narration': name_iva,
+                        'date': ret.creation_date,
+                        'ref': ret.number_purchase,
+                        'journal_id': journal_iva.id,
+                        'period_id': period,
+                        }
+            #Definimos cual sera la cabecera de las retenciones de renta
+            name_ir = ('Retencion al IR en compras') #en este caso de compras
+            move_ir = {
+                        'narration': name_ir,
+                        'date': ret.creation_date,
+                        'ref': ret.number_purchase,
+                        'journal_id': journal_ir.id,
+                        'period_id': period,
+                        }                                
+                   
+                    #recorro cada linea de retencion
+                    #variables de control para verificar que existen lineas de cada tipo
+            renta = False
+            iva = False
+            debit_sum=credit_sum=credit_sum_ir=debit_sum_ir=0.0
+            for line in lines:
+                amt = line.retained_value
+                #verifico las lineas por tipo para seleccionar el diario correspondiente
+                #import pdb
+                #pdb.set_trace()
+                if line.description == 'iva':
+                    credit_account_id_iva1=line.tax_id.account_collected_id #Retencion del x% en el iva 
+                    #SACAMOS EL IMPUESTO DE LA FACTURA DE LA LISTA DE INPUESTOS DE tax_line
+                    if ret.invoice_id.tax_line:
+                        credit_account_id_iva2= ret.invoice_id.tax_line[0].account_id#Otros --Impuestos
+                        #if ret.invoice_id.tax_line[1]: #Si tiene mas de un impuesto tendremos que realizar la retencion manualmente...xq no sabria con que diario hacer los moviemientos
+                        #    raise osv.except_osv(_('Error!'),_('La factura tiene mas de un impuesto, realice la rentención manualmente!. FAC: %s' )%(ret.invoice_id.invoice_number))                            
+                    else:
+                        raise osv.except_osv(_('Error!'), _("La factura no tiene un impuesto, revise la factura %s!")%(ret.invoice_id.invoice_number))                         
+                    debit_account_id_iva1=journal_iva.default_credit_account_id #IVA pagado en retenciones a la fuente ok
+                    debit_account_id_iva2=ret.invoice_id.account_id #Cuentas y Documentos por pagar
+                    if debit_account_id_iva1:
+                        vals_iva_line1 = (0, 0, {
+                                        'name': debit_account_id_iva1.name,
+                                        'date': ret.creation_date,
+                                        'partner_id': ret.partner_id.id,
+                                        'account_id': debit_account_id_iva1.id,
+                                        'journal_id': journal_iva.id,
+                                        'period_id': period,
+                                        'debit': amt > 0.0 and amt or 0.0,
+                                        'credit': amt < 0.0 and -amt or 0.0,                                    
+                                        'tax_code_id': line.tax_id.tax_code_id.id or False,
+                                        'tax_amount': amt or 0.0,
+                                        })
+                        move_line_iva.append(vals_iva_line1)
+                        debit_sum += vals_iva_line1[2]['debit'] - vals_iva_line1[2]['credit']
+                    if credit_account_id_iva1:
+                        vals_iva_line2 = (0, 0, {
+                                        'name': credit_account_id_iva1.name,
+                                        'date': ret.creation_date,
+                                        'partner_id': ret.partner_id.id,
+                                        'account_id': credit_account_id_iva1.id,
+                                        'journal_id': journal_iva.id,
+                                        'period_id': period,
+                                        'debit': amt < 0.0 and -amt or 0.0,
+                                        'credit': amt > 0.0 and amt or 0.0,                                     
+                                        'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                        'tax_amount': amt or 0.0,                                    
+                                        })
+                        move_line_iva.append(vals_iva_line2)
+                        credit_sum += vals_iva_line2[2]['credit'] - vals_iva_line2[2]['debit']
+                    if debit_account_id_iva2:
+                        vals_iva_line3 = (0, 0, {
+                                        'name': debit_account_id_iva2.name,
+                                        'date': ret.creation_date,
+                                        'partner_id': ret.partner_id.id,
+                                        'account_id': debit_account_id_iva2.id,
+                                        'journal_id': journal_iva.id,
+                                        'period_id': period,
+                                        'debit': amt > 0.0 and amt or 0.0,
+                                        'credit': amt < 0.0 and -amt or 0.0,                                     
+                                        'tax_code_id': line.tax_id.tax_code_id.id or False,
+                                        'tax_amount': amt or 0.0,
+                                        })
+                        move_line_iva.append(vals_iva_line3)
+                        debit_sum += vals_iva_line3[2]['debit'] - vals_iva_line3[2]['credit']
+                    if credit_account_id_iva2:
+                        vals_iva_line4 = (0, 0, {
+                                        'name': credit_account_id_iva2.name,
+                                        'date': ret.creation_date,
+                                        'partner_id': ret.partner_id.id,
+                                        'account_id': credit_account_id_iva2.id,
+                                        'journal_id': journal_iva.id,
+                                        'period_id': period,
+                                        'debit': amt < 0.0 and -amt or 0.0,
+                                        'credit': amt > 0.0 and amt or 0.0,                                    
+                                        'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                        'tax_amount': amt or 0.0,                                    
+                                        })
+                        move_line_iva.append(vals_iva_line4)
+                        credit_sum += vals_iva_line4[2]['credit'] - vals_iva_line4[2]['debit']
+                                #se cambia el valor de la variable ya que se encontro al menos una linea de retencion
+                        iva = True                           
+                
+                if line.description == 'renta':
+                    debit_account_id_ir1=journal_ir.default_credit_account_id#IR pagado en retenciones a la fuente ok
+                    debit_account_id_ir2=ret.invoice_id.account_id #Cuentas y Documentos por pagar
+                    credit_account_id_ir1=line.tax_id.account_collected_id #Porcentaje retenido en impuesto a la rente
+                    credit_account_id_ir2=ret.invoice_id.journal_id.default_credit_account_id #Otros (compras de mercaderia)
+                    if debit_account_id_ir1:
+                        vals_ir_line1 = (0, 0, {
+                                    'name': debit_account_id_ir1.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': debit_account_id_ir1.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt > 0.0 and amt or 0.0,
+                                    'credit': amt < 0.0 and -amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line1)
+                        debit_sum_ir += vals_ir_line1[2]['debit'] - vals_ir_line1[2]['credit']
+                    if credit_account_id_ir1:
+                        vals_ir_line2 = (0, 0, {
+                                    'name': credit_account_id_ir1.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': credit_account_id_ir1.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt < 0.0 and -amt or 0.0,
+                                    'credit': amt > 0.0 and amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line2)
+                        credit_sum_ir += vals_ir_line2[2]['credit'] - vals_ir_line2[2]['debit']
+                    if debit_account_id_ir2:
+                        vals_ir_line3 = (0, 0, {
+                                    'name': debit_account_id_ir2.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': debit_account_id_ir2.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt > 0.0 and amt or 0.0,
+                                    'credit': amt < 0.0 and -amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line3)
+                        debit_sum_ir += vals_ir_line3[2]['debit'] - vals_ir_line3[2]['credit']
+                    if credit_account_id_ir2:
+                        vals_ir_line4 = (0, 0, {
+                                    'name': credit_account_id_ir2.name,
+                                    'date': ret.creation_date,
+                                    'partner_id': ret.partner_id.id,
+                                    'account_id': credit_account_id_ir2.id,
+                                    'journal_id': journal_ir.id,
+                                    'period_id': period,
+                                    'debit': amt < 0.0 and -amt or 0.0,
+                                    'credit': amt > 0.0 and amt or 0.0,                                    
+                                    'tax_code_id': line.tax_id.tax_code_id.id or False,                                    
+                                    'tax_amount': amt or 0.0,                                    
+                                    })
+                        move_line_ir.append(vals_ir_line4)
+                        credit_sum_ir += vals_ir_line4[2]['credit'] - vals_ir_line4[2]['debit']
+                                #se cambia el valor de la variable ya que se encontro al menos una linea de retencion
+                        renta = True
+                if debit_sum > credit_sum:
+                    acc_id = journal_iva.default_credit_account_id.id
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Credit Account!')%(journal_iva.name))
+                    adjust_credit = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_iva.id,
+                                'period_id': period,
+                                'debit': 0.0,
+                                'credit': debit_sum - credit_sum,
+                            })
+                    move_line_iva.append(adjust_credit)
+                elif debit_sum_ir > credit_sum_ir:
+                    acc_id = journal_ir.default_credit_account_id.id
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Credit Account!')%(journal_ir.name))
+                    adjust_credit_ir = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_ir.id,
+                                'period_id': period,
+                                'debit': 0.0,
+                                'credit': debit_sum_ir - credit_sum_ir,
+                            })
+                    move_line_ir.append(adjust_credit_ir)
+            
+                elif debit_sum < credit_sum:
+                    acc_id = journal_iva.default_debit_account_id.id
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Debit Account!')%(journal_iva.name))
+                    adjust_debit = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_iva.id,
+                                'period_id': period,
+                                'debit': credit_sum - debit_sum,
+                                'credit': 0.0,
+                            })
+                    move_line_iva.append(adjust_debit)
+                elif debit_sum_ir < credit_sum_ir:  
+                    acc_id = journal_ir.default_debit_account_id.id
+                    if not acc_id:
+                        raise osv.except_osv(_('Configuration Error!'),_('The Expense Journal "%s" has not properly configured the Debit Account!')%(journal_ir.name))
+                    adjust_debit = (0, 0, {
+                                'name': _('Adjustment Entry'),
+                                'date': ret.creation_date,
+                                'partner_id': False,
+                                'account_id': acc_id,
+                                'journal_id': journal_ir.id,
+                                'period_id': period,
+                                'debit': credit_sum_ir - debit_sum_ir,
+                                'credit': 0.0,
+                            })
+                    move_line_ir.append(adjust_debit)
+                #import pdb
+                #pdb.set_trace()     
+                if renta == True:
+                    acc_move_obj = self.pool.get('account.move')    
+                    move_ir.update({'line_id': move_line_ir})
+                    move_id_ir = acc_move_obj.create(cr, uid, move_ir, context=context)
+                    self.write(cr, uid, [ret.id], {'move_id': move_id_ir, 'period_id' : period}, context=context)
+                    if journal_ir.entry_posted: 
+                        acc_move_obj.post(cr, uid, [move_id_ir], context=context) #omitir estado borrador
+                elif iva == True:                           
+                    acc_move_obj1= self.pool.get('account.move')            
+                    move_iva.update({'line_id': move_line_iva})
+                    move_id_iva = acc_move_obj1.create(cr, uid, move_iva, context=context)                        
+                    self.write(cr, uid, [ret.id], {'move_id': move_id_iva, 'period_id' : period}, context=context)                
+                    if journal_iva.entry_posted:
+                        acc_move_obj1.post(cr, uid, [move_id_iva], context=context) #omitir estado borrador
+            self.write(cr, uid, ids, {'state': 'approved'})
+            return False
+        
+    
+    
+    def action_aprove(self,cr,uid,ids,context=None):            
+        company = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id
+        journal_iva = company.journal_iva_id
+        journal_ir = company.journal_ir_id       
+        
+        #OJO
+        # HAY Q VALIDAR QUE SEA CORRECTO EL NUMERO DE RETENCION Y Q HAYA AUTORIZACION
+        # PORQUE PUDO HABER MODIFICADO ESTOS CAMPOS
+        
+        #import pdb
+        #pdb.set_trace()
+        for ret in self.browse(cr,uid,ids,context=None):            
+            #Para verificar que haya cuentas debe y haber en el diario, aunq no es necesario ya que
+            #estas cuentas se sacaran desde la factura y los respectivos impuestos 
+            if not journal_ir.default_debit_account_id:
+                raise osv.except_osv('Error!', _("IR Retention Journal doesn't have debit account assigned!, can't complete operation"))
+            if not journal_iva.default_debit_account_id:
+                raise osv.except_osv('Error!', _("Iva Retention Journal doesn't have debit account assigned!, can't complete operation"))
             #lineas contables no conciliadas que pertenecen a la factura
             day = datetime.timedelta(days=5)
-            add_date = datetime.datetime(*time.strptime(ret.invoice_id.date_invoice,'%Y-%m-%d')[:5])+ day
+            add_date = datetime.datetime(*time.strptime(ret.invoice_id.date_invoice,'%Y-%m-%d')[:5])+ day            
             if ret.invoice_id.amount_total < ret.total:
                 raise osv.except_osv('Error!', _("Amount of retention is bigger than residual value of invoice, please verify"))
             if ret.creation_date < ret.invoice_id.date_invoice:
                 raise osv.except_osv('Error!', _("The date of retention can not be least than the date of invoice"))
             if ret.creation_date > add_date.strftime('%Y-%m-%d'):
-                raise osv.except_osv('Error!', _("The date of retention can not be more than 5 days from the date of the invoice"))
+                raise osv.except_osv('Error!', _("The date of retention can not be more than 5 days from the date of the invoice"))            
             if ((ret['transaction_type'])=='sale'):
-                for retention in ret_obj.search(cr, uid, [('invoice_id.partner_id.id', '=', ret.invoice_id.partner_id.id), ('transaction_type','=','sale'), ('id','not in',tuple(ids))]):
-                    if ret_obj.browse(cr, uid, [retention,], context)[0].number_sale == ret.number_sale:
-                        raise osv.except_osv(_('Error!'), _("There is an retention with number %s of client %s") % (ret.number_sale, ret.invoice_id.partner_id.name))                        
-                move_line_ids = acc_move_line_obj.search(cr, uid, [('invoice', '=', ret.invoice_id.id),('state','=','valid'), ('account_id.type', '=', 'receivable'), ('reconcile_id', '=', False)], context=context)
-                #se asume que solo existira un movimiento sin conciliar por factura ->>> Esto debe ser verificado mediante pruebas
-                move_line = acc_move_line_obj.browse(cr, uid, move_line_ids, context)[0]
-                #se comprueba que la factura se encuentre abierta
-                if not ret.invoice_id.state == 'open':
-                    raise osv.except_osv('Error!', "The invoice is not open, you cannot add a retention")
-                #Se verifica que el residuo de la factura no sea superior a lo que se va a retener
-                if ret.invoice_id.residual < ret.total:
-                    raise osv.except_osv('Error!', "The residual value of invoice is lower than total value of withholding")
-                #Obtengo el periodo de la factura
-                period=ret.invoice_id.period_id.id
-                #creacion de vauchers de pago con retencion
-                line_ids = ret_line_obj.search(cr, uid, [('retention_id', '=', ret['id']),])
-                lines = ret_line_obj.browse(cr, uid, line_ids, context)
-                
-                #variable que guarda los ids de los voucher que se crean para su posterior uso desde retencion
-                vouchers = []
-                #verifico que existan lineas de retencion
-                if lines:
-                    #creo la cabecera del voucher para las retenciones de iva
-                    vals_vou_iva = {
-                                'type':'receipt',
-                                #periodo de la factura
-                                'period_id': ret.invoice_id.period_id.id,
-                                #fecha de la retencion
-                                'date': ret.creation_date,
-                                #el diario de iva de la compania
-                                'journal_id': journal_iva.id,
-                                #numero de retencion como referencia
-                                'reference':_('RET CLI: %s') % ret.number_sale,
-                                #la cuenta de debido que va a registrar el impuesto
-                                'account_id': journal_iva.default_debit_account_id.id,
-                                'company_id' : company.id,
-                                'amount': ret.total_iva,
-                                'currency_id': ret.invoice_id.currency_id.id,
-                                'retention_id': ret.id,
-                                'partner_id': ret.invoice_id.partner_id.id
-                                
-                    }
-                    #creo la cabecera del voucher para las lineas de iva
-                    voucher_iva = acc_vou_obj.create(cr, uid, vals_vou_iva, context)
-                    vouchers.append(voucher_iva)
-                    #creo la cabecera del voucher para las retenciones de renta
-                    vals_vou_ir = {'type':'receipt',
-                                #periodo de la factura
-                                'period_id': ret.invoice_id.period_id.id,
-                                #fecha de la retencion
-                                'date': ret.creation_date,
-                                #el diario de iva de la compania
-                                'journal_id': journal_ir.id,
-                                #numero de retencion como referencia
-                                'reference':_('RET CLI: %s') % ret.number_sale,
-                                #la cuenta de debido que va a registrar el impuesto
-                                'account_id': journal_ir.default_debit_account_id.id,
-                                'company_id' : company.id,
-                                'amount': ret.total_renta,
-                                'currency_id': ret.invoice_id.currency_id.id,
-                                'retention_id': ret.id,
-                                'partner_id': ret.invoice_id.partner_id.id
-                    }
-                    #creo la cabecera del voucher para las lineas de renta
-                    voucher_ir = acc_vou_obj.create(cr, uid, vals_vou_ir, context)
-                    vouchers.append(voucher_ir)
-                    #recorro cada linea de retencion
-                    #variables de control para verificar que existen lineas de cada tipo
-                    renta = False
-                    iva = False
-                    for line in lines:
-                        #verifico las lineas por tipo para seleccionar el diario correspondiente
-                        if line.description == 'iva':
-                            vals_vou__iva_line = {'voucher_id': voucher_iva,
-                                             'move_line_id':move_line.id,
-                                             'account_id':move_line.account_id.id,
-                                             'amount':line.retained_value_manual,
-                                             }
-                            acc_vou_line_obj.create(cr, uid, vals_vou__iva_line, context)
-                            #se cambia el valor de la variable ya que se encontro al menos una linea de retencion
-                            iva = True
-                            
-                        if line.description == 'renta':
-                            vals_vou_ir_line = {'voucher_id': voucher_ir,
-                                             'move_line_id':move_line.id,
-                                             'account_id':move_line.account_id.id,
-                                             'amount':line.retained_value_manual,
-                                             }
-                            acc_vou_line_obj.create(cr, uid, vals_vou_ir_line, context)
-                            #se cambia el valor de la variable ya que se encontro al menos una linea de retencion
-                            renta = True
-                    #se aprueba los voucher de rentencion, y se verifica que existan lineas
-                    #acc_vou_obj.proforma_voucher(cr, uid, [voucher_iva, voucher_ir,], context)
-                    if iva:
-                        #por medio de la variable contexto se especifica que tipo de impuesto es del voucher
-                        self.action_move_line_create(cr, uid, [voucher_iva,], context={'tax':'iva'})
-                    #en caso de no existir lineas en el voucher se elimina el que se creo anteriormente
-                    else:
-                        acc_vou_obj.unlink(cr, uid,[voucher_iva,])
-                        vouchers.remove(voucher_iva)
-                    
-                    if renta:
-                        #por medio de la variable contexto se especifica que tipo de impuesto es del voucher
-                        self.action_move_line_create(cr, uid, [voucher_ir,], context={'tax':'renta'})
-                    #en caso de no existir lineas en el voucher se elimina el que se creo anteriormente
-                    else:
-                        acc_vou_obj.unlink(cr, uid,[voucher_ir,])
-                        vouchers.remove(voucher_ir)
-                    #print vouchers
-                    #se cambia el estado de la retencion
-                    if vouchers:
-                        acc_vou_obj.write(cr, uid, vouchers, {'retention_id':ret.id},context)
-                    date_ret = None
-                    if not ret.creation_date:
-                        date_ret = time.strftime('%Y-%m-%d')
-                    else:
-                        date_ret = ret.creation_date
-                    self.write(cr, uid, [ret.id,], { 'state': 'approved','creation_date': date_ret,'doc_number':ret.number_sale, 'period_id': period}, context)
-                else:
-                    raise osv.except_osv('Error!', _("You can't aprove a retention without retention lines"))
+                return self.crear_asiento_enventas(cr,uid,ids,ret,context)                
             elif(ret['transaction_type']=='purchase'):
-                if ret.invoice_id.period_id.id:
-                    period=ret.invoice_id.period_id.id
-                else:
-                    user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
-                    period = self.pool.get('account.period').search(cr, uid, [('date_start','<=',ret.invoice_id.date_invoice),('date_stop','>=',ret.invoice_id.date_invoice), ('company_id', '=', user.company_id.id)])
-                if not ret.authorization_purchase_id:
-                    raise osv.except_osv(_('Invalid action!'), _('Not exist authorization for the document, please check'))
-                if not ret.automatic:
-                    if not ret.number_purchase:
-                        raise osv.except_osv(_('Invalid action!'), _('Not exist number for the document, please check'))
-                    for doc in ret.authorization_purchase_id.type_document_ids:
-                        if doc.name=='withholding':
-                            document_obj.add_document(cr, uid, [doc.id,], context)
-                    self.write(cr, uid, [ret.id], {'doc_number': ret.number_purchase, 'state': 'approved', 'period_id': period}, context)
-                else:
-                    if not ret.number_purchase:
-                        b = True
-                        vals_aut = self.pool.get('sri.authorization').get_auth_secuence(cr, uid, 'withholding')
-                        while b :
-                            number = self.pool.get('ir.sequence').get_id(cr, uid, vals_aut['sequence'])
-                            if not self.pool.get('ecua.retencion').search(cr, uid, [('transaction_type','=','purchase'),('doc_number','=',number),('id','not in',tuple(ids))],):
-                                b=False
-                    else:
-                        number = ret.number_purchase
-                    for doc in ret.authorization_purchase_id.type_document_ids:
-                        if doc.name=='withholding':
-                            if doc.automatic:
-                                context['automatic'] = True
-                            document_obj.add_document(cr, uid, [doc.id,], context)
-                    self.write(cr, uid, [ret.id], {'doc_number': number, 'state': 'approved', 'period_id': period, 'number_purchase':number}, context)
+                return self.crear_asiento_encompras(cr,uid,ids,ret,context)
         return True
     
     def action_cancel(self,cr,uid,ids,context=None):
@@ -675,7 +1072,7 @@ ecua_retencion()
 class ecua_retencion_line(osv.osv):
     
     """This have the lines of values retained"""
-    def _amount_retained(self, cr, uid, ids, field_name, arg, context=None):
+    def _amount_retained(self, cr, uid, ids, field_name, arg, context=None):        
         cur_obj = self.pool.get('res.currency')
         res = {}
         for line in self.browse(cr, uid, ids, context=context):
@@ -695,18 +1092,17 @@ class ecua_retencion_line(osv.osv):
 
     def _percentaje_retained(self, cr, uid, ids, field_name, arg, context=None):
         res = {}
-        #tax_code = self.pool.get('account.tax.code').browse(cr, uid, ids, context)[0]['code']
+        porcentaje=tax=0.0        
+        tax_obj = self.pool.get('account.tax')
         for line in self.browse(cr, uid, ids, context=context):
-            tax_code_id = self.pool.get('account.tax.code').search(cr, uid, [('id', '=', line.tax_id.id)])
+            tax_code_id = self.pool.get('account.tax.code').search(cr, uid, [('id', '=', line.tax_id.tax_code_id.id)])
             tax_code = None
             if tax_code_id:
-                tax_code = self.pool.get('account.tax.code').browse(cr, uid, tax_code_id, context)[0]['code']
-            tax_obj = self.pool.get('account.tax')
-            tax = tax_obj.search(cr, uid, [('tax_code_id', '=', tax_code), ('child_ids','=',False)])
-            if line.description=="renta":
-                tax = tax_obj.search(cr, uid, [('base_code_id', '=', tax_code), ('child_ids','=',False)])
-            porcentaje= (tax_obj.browse(cr, uid, tax, context)[0]['amount'])*(-100)
-            res[line.id]=porcentaje
+                tax_code = self.pool.get('account.tax.code').browse(cr, uid, tax_code_id, context)[0]['code']            
+            if (tax_code):
+                tax = tax_obj.search(cr, uid, [('tax_code_id', '=', tax_code), ('child_ids','=',False)])
+                porcentaje= (tax_obj.browse(cr, uid, tax, context)[0]['amount'])*(-100)
+            res[line.id]= porcentaje
         return res
     
 
@@ -746,18 +1142,15 @@ class ecua_retencion_line(osv.osv):
     _columns = {
         'fiscalyear_id': fields.many2one('account.fiscalyear', 'Fiscal Year', required=True),
         'description': fields.selection([('iva', 'IVA'),('renta', 'RENTA'),('divisas', 'DIVISAS'),], 'Impuesto', required=True),
-        'tax_id':fields.many2one('account.tax.code', 'Tax Code'), 
+        'tax_id':fields.many2one('account.tax', 'Tax Code'), 
         'tax_base': fields.float('Tax Base', digits_compute=dp.get_precision('Account')),
         'retention_percentage_manual': fields.float('Percentaje Value', digits_compute=dp.get_precision('Account')), 
         'retained_value_manual': fields.function(_amount_retained_manual, method=True, type='float', string='Reatained Value',
-                                          store={
-                                                 'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage_manual'], 10)},), 
+                                          store={'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage_manual'], 10)},), 
         'retention_percentage': fields.function(_percentaje_retained, method=True, type='float', string='Percentaje Value',
-                                          store={
-                                                 'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_id',], 1)},),
+                                          store={'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_id',], 1)},),
         'retained_value': fields.function(_amount_retained, method=True, type='float', string='Reatained Value',
-                                          store={
-                                                 'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage'], 10)},), 
+                                          store={'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage'], 10)},), 
         'sequence': fields.integer('Sequence'),
         'retention_id': fields.many2one('ecua.retencion', 'Retention', ondelete='cascade'),
         'creation_date_retention': fields.related('retention_id','creation_date', type='date', relation='ecua.retencion', string='Creation Date'), 

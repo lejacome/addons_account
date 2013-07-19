@@ -31,9 +31,7 @@
 						</tree>
 					</field>
 			 		<group col="6" colspan="4">
-						<field name="state" string='State' />
-						<button name="approve_signal" states="draft" string="Aprobar1"
-							icon="gtk-go-forward"/>
+						<field name="state" string='Estado' />
 						<button name="button_aprove" states="draft" string="Aprobar"
 							icon="gtk-go-forward" type="object" />									
 						<button name="button_cancel" states="approved" string="Cancelar"
