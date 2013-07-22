@@ -74,30 +74,33 @@ class ecua_retencion(osv.osv):
             values={}
         curr_user = self.pool.get('res.users').browse(cr, uid, uid, context)
         values['ruc'] = curr_user.company_id.ruc
+        values['creation_date'] = time.strftime('%Y-%m-%d')
         printer = None
-        if curr_user.printer_default_id:
-            printer = curr_user.printer_default_id
-        if not printer:
-            for shop in curr_user.shop_ids:
-                for printer_id in shop.printer_point_ids:
-                    printer = printer_id
-                    break
-        if printer:
-            values['shop_id'] = printer.shop_id.id
-            values['printer_id'] = printer.id
-            auth_line_id = doc_obj.search(cr, uid, [('name','=','withholding'), ('printer_id','=',printer.id), ('state','=',True)])
-            if not auth_line_id:
-                raise osv.except_osv(_('Error!'), _('No existe autorización activa para generar retenciones'))
-            if auth_line_id:
-                auth_line = doc_obj.browse(cr, uid, auth_line_id[0],context)
-                values['authorization_purchase_id'] = auth_line.sri_authorization_id.id
-                values['autoriza_date_emision'] = auth_line.sri_authorization_id.start_date
-                values['autoriza_date_expire'] = auth_line.sri_authorization_id.expiration_date
-                values['doc_number'] = doc_obj.get_next_value_secuence(cr, uid, 'withholding', False, printer.id, 'ecua.retencion', 'doc_number', context)
-                values['number_purchase']=values['doc_number']
-                values['creation_date'] = time.strftime('%Y-%m-%d')
-                values['transaction_type']='purchase'
-                values['state']='draft'
+    #Verificamos si es compra o venta 
+        type = context.get('transaction_type', False)
+        values['transaction_type']=type
+        if type=='purchase':            
+            if curr_user.printer_default_id:
+                printer = curr_user.printer_default_id
+            if not printer:
+                for shop in curr_user.shop_ids:
+                    for printer_id in shop.printer_point_ids:
+                        printer = printer_id
+                        break
+            if printer:
+                values['shop_id'] = printer.shop_id.id
+                values['printer_id'] = printer.id
+                auth_line_id = doc_obj.search(cr, uid, [('name','=','withholding'), ('printer_id','=',printer.id), ('state','=',True)])
+                if not auth_line_id:
+                    raise osv.except_osv(_('Error!'), _('No existe autorización activa para generar retenciones'))
+                if auth_line_id:
+                    auth_line = doc_obj.browse(cr, uid, auth_line_id[0],context)
+                    values['authorization_purchase_id'] = auth_line.sri_authorization_id.id
+                    values['autoriza_date_emision'] = auth_line.sri_authorization_id.start_date
+                    values['autoriza_date_expire'] = auth_line.sri_authorization_id.expiration_date
+                    values['doc_number'] = doc_obj.get_next_value_secuence(cr, uid, 'withholding', False, printer.id, 'ecua.retencion', 'doc_number', context)
+                    values['number_purchase']=values['doc_number']                                    
+                    values['state']='draft'
         return values
         
             
@@ -488,7 +491,7 @@ class ecua_retencion(osv.osv):
             iva = False
             debit_sum=credit_sum=credit_sum_ir=debit_sum_ir=0.0
             for line in lines:
-                amt = line.retained_value
+                amt = line.retained_value_manual            
                 #verifico las lineas por tipo para seleccionar el diario correspondiente
                 if line.description == 'iva':
                     debit_account_id_iva1=line.tax_id.account_collected_id #% de IVA cobrado en la Retencion
@@ -1145,7 +1148,7 @@ class ecua_retencion_line(osv.osv):
         'tax_id':fields.many2one('account.tax', 'Tax Code'), 
         'tax_base': fields.float('Tax Base', digits_compute=dp.get_precision('Account')),
         'retention_percentage_manual': fields.float('Percentaje Value', digits_compute=dp.get_precision('Account')), 
-        'retained_value_manual': fields.function(_amount_retained_manual, method=True, type='float', string='Reatained Value',
+        'retained_value_manual': fields.function(_amount_retained_manual, method=True, type='float', string='Reatained Value1',
                                           store={'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_base','retention_percentage_manual'], 10)},), 
         'retention_percentage': fields.function(_percentaje_retained, method=True, type='float', string='Percentaje Value',
                                           store={'ecua.retencion.line': (lambda self, cr, uid, ids, c={}: ids, ['tax_id',], 1)},),

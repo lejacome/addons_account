@@ -1,0 +1,7 @@
+1.-Install ec_niff
+2.-Install ec_sri
+3.-Configure account chart for the company
+4.-Add store and printed point of the company to User
+5.-Assign the Journal for retentions at the company
+6.-Assign default accounts for two journals of retentions IVA and IR
+7.-For purchase rentention we need create an valid authorization. 

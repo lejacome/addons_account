@@ -44,7 +44,26 @@
 				</form>
 			</field>
 		</record>
-
+		
+		<record model="ir.ui.view" id="view_purchase_retention_tree">
+			<field name="name">ecua.retencion.tree</field>
+			<field name="model">ecua.retencion</field>
+			<field name="type">tree</field>
+			<field name="arch" type="xml">
+				<tree string="Withhold"
+					colors="blue:state in ('draft');black:state in ('approved');gray:state in ('canceled')">
+					<field name="doc_number" />
+					<field name="invoice_id" string="Document" />
+					<field name="partner_id" string="Cliente" />
+					<field name="period_id" />
+					<field name="creation_date" />
+					<field name="transaction_type" />
+					<field name="total_iva" sum="Total Retenciones IVA" />
+					<field name="total_renta" sum="Total Retenciones Renta" />
+					<field name="state" />
+				</tree>
+			</field>
+		</record>
 
 		<record model="ir.ui.view" id="view_account_retention_sale_form">
 			<field name="name">ecua.retencion.sale.form</field>
@@ -54,7 +73,7 @@
 				<form string="Retention">
 					<field name="number_sale" select="1" required="1" />
 					<field name="creation_date" select="2" />
-					<field name="transaction_type" select="1" invisible="1" />
+					<field name="transaction_type" select="1" invisible="0" />
 					<field name="period_id" select="1" />
 					<field name="authorization_sale" string="Authorization"
 						required="1" />
@@ -67,6 +86,7 @@
 						<tree string="Retention Lines" editable="top">
 							<field name="fiscalyear_id" widget="selection" />
 							<field name="description" />
+							<field name="tax_id" widget="selection"/>
 							<field name="tax_base" />
 							<field name="retention_percentage_manual" />
 							<field name="retained_value_manual" />
@@ -74,6 +94,7 @@
 						<form string="Retention Lines">
 							<field name="fiscalyear_id" />
 							<field name="description" />
+							<field name="tax_id"/>							
 							<field name="tax_base" />
 							<field name="retention_percentage_manual" />
 							<field name="retained_value_manual" />
@@ -92,16 +113,17 @@
 			</field>
 		</record>
 
-		<record model="ir.ui.view" id="view_account_retention_tree">
+		
+		<record model="ir.ui.view" id="view_sale_retention_tree">
 			<field name="name">ecua.retencion.tree</field>
 			<field name="model">ecua.retencion</field>
 			<field name="type">tree</field>
 			<field name="arch" type="xml">
 				<tree string="Withhold"
 					colors="blue:state in ('draft');black:state in ('approved');gray:state in ('canceled')">
-					<field name="doc_number" />
-					<field name="invoice_id" string="Document" />
-					<field name="partner_id" string="Client" />
+					<field name="number_sale" />
+					<field name="invoice_id" string="Documento" />
+					<field name="partner_id" string="Cliente" />
 					<field name="period_id" />
 					<field name="creation_date" />
 					<field name="transaction_type" />
@@ -112,165 +134,36 @@
 			</field>
 		</record>
 
-		<record id="account_retention_filter_view" model="ir.ui.view">
-			<field name="name">ecua.retencion.select</field>
-			<field name="model">ecua.retencion</field>
-			<field name="type">search</field>
-			<field name="arch" type="xml">
-				<search string="Search Withhold">
-					<group col="16" colspan="4">
-						<field name="doc_number" />
-						<field name="invoice_id" string="Document" />
-						<field name="partner_id" string="Customer" />
-						<field name="creation_date" />
-						<field name="transaction_type" />
-						<field name="total_iva" />
-						<field name="total_renta" />
-						<field name="state" />
-					</group>
-					<newline />
-					<group col="8" colspan="4" expand="0" string="Group By...">
-						<filter string="Creation Date" name="creation_date"
-							icon="terp-stock_effects-object-colorize" context="{'group_by':'creation_date'}" />
-						<separator orientation="vertical" />
-						<filter string="Period" name="period_id"
-							icon="terp-stock_effects-object-colorize" context="{'group_by':'period_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Invoice Number" icon="terp-stock_effects-object-colorize"
-							name="invoice_id" context="{'group_by':'invoice_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Partner" icon="terp-stock_effects-object-colorize"
-							name="partner_id" context="{'group_by':'partner_id'}" />
-						<separator orientation="vertical" />
-					</group>
-				</search>
-			</field>
-		</record>
 
 		<record model="ir.actions.act_window" id="action_account_retention_sale">
-			<field name="name">Withhold Sales</field>
+			<field name="name">Retenciones en ventas</field>
 			<field name="res_model">ecua.retencion</field>
-			<field name="domain">[('transaction_type','=','sale')]</field>
-			<field name="view_type">form</field>
-			<field name="search_view_id" ref="account_retention_filter_view"/>
-			<field name="context">{'form_view_ref' : 'view_account_retention_sale_form'}</field>
+			<field name="type">ir.actions.act_window</field>			
+			<field name="view_type">form</field>					
 			<field name="view_mode">tree,form</field>
-			<field name="view_id" eval="False" />
+			<field name="view_id" ref="view_sale_retention_tree"/>
+			<field name="domain">[('transaction_type','=','sale')]</field>
+			<field name="context">{'form_view_ref' : 'ec_rect.view_account_retention_sale_form', 'transaction_type' : 'sale'}</field>					
 		</record>
 
-		<record id="action_sale_receipt_tree" model="ir.actions.act_window.view">
-			<field eval="1" name="sequence" />
-			<field name="view_mode">tree</field>
-			<field name="view_id" ref="view_account_retention_tree" />
-			<field name="act_window_id" ref="action_account_retention_sale" />
-		</record>
-
-		<record id="action_sale_receipt_form" model="ir.actions.act_window.view">
-			<field eval="2" name="sequence" />
-			<field name="view_mode">form</field>
-			<field name="view_id" ref="view_account_retention_sale_form" />
-			<field name="act_window_id" ref="action_account_retention_sale" />
-		</record>
-
-		<menuitem name="Retenciones" id="retenciones_ventas"
-			parent="account.menu_finance_receivables"  action="action_account_retention_sale" />
+		<menuitem id="retenciones_ventas" parent="account.menu_finance_receivables" 
+		action="ec_rect.action_account_retention_sale"/>
 
 		<record model="ir.actions.act_window" id="action_account_retention_purchase">
-			<field name="name">Withhold of Purchases</field>
+			<field name="name">Retenciones en compras</field>
 			<field name="res_model">ecua.retencion</field>
-			<field name="domain">[('transaction_type','=','purchase')]</field>
+			<field name="type">ir.actions.act_window</field>
 			<field name="view_type">form</field>
 			<field name="view_mode">tree,form</field>
-			<field name="view_id" eval="False" />
+			<field name="view_id" ref="view_purchase_retention_tree"/>
+			<field name="domain">[('transaction_type','=','purchase')]</field>
+			<field name="context">{'form_view_ref' : 'ec_rect.view_retention_compra_form', 'transaction_type':'purchase'}</field>			
 		</record>
 
-		<record id="action_sale_receipt_tree" model="ir.actions.act_window.view">
-			<field eval="1" name="sequence" />
-			<field name="view_mode">tree</field>
-			<field name="view_id" ref="view_account_retention_tree" />
-			<field name="act_window_id" ref="action_account_retention_purchase" />
-		</record>
-
-		<record id="action_sale_receipt_form" model="ir.actions.act_window.view">
-			<field eval="1" name="sequence" />
-			<field name="view_mode">form</field>
-			<field name="view_id" ref="view_retention_compra_form" />
-			<field name="act_window_id" ref="action_account_retention_purchase" />
-		</record>
-
-		<menuitem name="Retenciones" id="retenciones_compras"
-			parent="account.menu_finance_payables" action="action_account_retention_purchase" />
-
-		<record model="ir.ui.view" id="retention_line_form_view">
-			<field name="name">ecua.retencion.line.form</field>
-			<field name="model">ecua.retencion.line</field>
-			<field name="type">form</field>
-			<field name="arch" type="xml">
-				<form string="Retention Lines">
-					<field name="fiscalyear_id" />
-					<field name="description" />
-					<field name="tax_id" />
-					<field name="tax_base" />
-					<field name="retention_percentage" />
-					<field name="retained_value" />
-				</form>
-			</field>
-		</record>
-
-		<record model="ir.ui.view" id="retention_line_tree_view">
-			<field name="name">ecua.retencion.line.tree</field>
-			<field name="model">ecua.retencion.line</field>
-			<field name="type">tree</field>
-			<field name="arch" type="xml">
-				<tree string="Retention Lines" editable="top">
-					<field name="fiscalyear_id" widget="selection" />
-					<field name="description" />
-					<field name="tax_id" widget="selection" />
-					<field name="tax_base" />
-					<field name="retention_percentage" />
-					<field name="retained_value" />
-				</tree>
-			</field>
-		</record>
+		<menuitem id="retenciones_compras" parent="account.menu_finance_payables" 
+		action="ec_rect.action_account_retention_purchase"/>
 		
-		<record id="account_retention_line_filter_view" model="ir.ui.view">
-			<field name="name">ecua.retencion.line.select</field>
-			<field name="model">ecua.retencion.line</field>
-			<field name="type">search</field>
-			<field name="arch" type="xml">
-				<search string="Search Retention Line">
-					<group col="8" colspan="4">
-						<field name="retention_id"></field>
-						<field name="partner_id" />
-						<field name="invoice_id" />
-						<field name="period_id" />
-						<field name="tax_id" />
-						<field name="creation_date"></field>
-					</group>
-					<newline />
-					<group col="8" colspan="4" expand="0" string="Group By...">
-						<filter string="Fiscal Year" name="fiscalyear_id"
-							icon="terp-stock_effects-object-colorize" context="{'group_by':'fiscalyear_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Period" name="period_id"
-							icon="terp-stock_effects-object-colorize" context="{'group_by':'period_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Retention Number" icon="terp-stock_effects-object-colorize"
-							name="retention_id" context="{'group_by':'retention_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Invoice Number" icon="terp-stock_effects-object-colorize"
-							name="invoice_id" context="{'group_by':'invoice_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Partner" icon="terp-stock_effects-object-colorize"
-							name="partner_id" context="{'group_by':'partner_id'}" />
-						<separator orientation="vertical" />
-						<filter string="Tax" name="tax_id"
-							icon="terp-stock_effects-object-colorize" context="{'group_by':'tax_id'}" />
-						<separator orientation="vertical" />
-					</group>
-				</search>
-			</field>
-		</record>
+		
 		<record model="ir.ui.view" id="account_retention_line_tree_view">
 			<field name="name">ecua.retencion.line.tree</field>
 			<field name="model">ecua.retencion.line</field>
