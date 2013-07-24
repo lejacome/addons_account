@@ -54,6 +54,8 @@
      'views/voucher_view.xml',
      'views/ndc_view.xml',
      'views/ndd_view.xml',
+     'views/ndc_purchase_view.xml',
+     'views/ndd_purchase_view.xml',
      'views/retencion_view.xml',
      'views/invoice_view.xml', 
      'workflow/retencion_workflow.xml',
