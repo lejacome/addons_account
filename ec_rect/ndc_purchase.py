@@ -44,7 +44,7 @@ class ecua_ndc_purchase(osv.osv):
     
     _columns = {
                  'document_id': fields.many2one('documentos.complementarios','Document',ondelete='cascade'),
-                 'ndc_line_ids':fields.one2many('ecua.ndc_line','ecua_ndc_id','Lineas N. Credito'),
+                 'ndc_line_ids':fields.one2many('ecua.ndc_purchase_line','ecua_ndc_id','Lineas N. Credito'),
                  'ndc_concept':fields.selection([
                 ('error','Error de Facturacion'),
                 ('bono','Aplica bono y/o descuento'),
@@ -219,7 +219,7 @@ class ecua_ndc_purchase(osv.osv):
                 'journal_id': slip.journal_id.id,
                 'period_id': period_id,
             }
-            for line in slip.ndc_line_ids:
+            for line in slip.ndd_line_ids:
                 amt_tax = 0.0
                 amt = slip.valor_total and -line.valor_modifica or line.valor_modifica
                 amtd = 0.0
@@ -229,6 +229,8 @@ class ecua_ndc_purchase(osv.osv):
                 #credit_account_id = line.salary_rule_id.account_credit.id
                 debit_account_id = slip.num_comprob_venta.account_id.id
                 credit_account_id = slip.journal_id.default_debit_account_id.id
+                import pdb
+                pdb.set_trace()
                 for tax in line.invoice_line_tax_id:
                     amt_tax = tax.amount * amt
                     tax_credit_line = (0, 0, {
@@ -239,35 +241,35 @@ class ecua_ndc_purchase(osv.osv):
                     #'account_id': debit_account_id,
                     'journal_id': slip.journal_id.id,
                     'period_id': period_id,
-                    'debit': amt_tax > 0.0 and amt_tax or 0.0,
-                    'credit': amt_tax < 0.0 and -amt_tax or 0.0,
+                    'debit': amt_tax < 0.0 and -amt_tax or 0.0,
+                    'credit': amt_tax > 0.0 and amt_tax or 0.0,
                     #'analytic_account_id': line.salary_rule_id.analytic_account_id and line.salary_rule_id.analytic_account_id.id or False,
                     'tax_code_id': tax.tax_code_id.id or False,
                     #'tax_code_id': line.salary_rule_id.account_tax_id and line.salary_rule_id.account_tax_id.id or False,
                     'tax_amount': -amt_tax or 0.0,
                     #'tax_amount': line.salary_rule_id.account_tax_id and amt or 0.0,
                     })
-                    move_line_ids.append(tax_debit_line)                    
+                    move_line_ids.append(tax_credit_line)                    
                     credit_sum += tax_credit_line[2]['credit'] - tax_credit_line[2]['debit']
                     
-                if credit_account_id:
+                    if credit_account_id:
 
-                    credit_line = (0, 0, {
-                    #'name': line.name,
-                    'name': line.motivo_modifica,
-                    'date': timenow,
-                    'partner_id': slip.partner_id.id,
-                    'account_id': credit_account_id,
-                    'journal_id': slip.journal_id.id,
-                    'period_id': period_id,
-                    'debit': amt < 0.0 and -amt or 0.0,
-                    'credit': amt > 0.0 and amt or 0.0,
-                    #'analytic_account_id': line.salary_rule_id.analytic_account_id and line.salary_rule_id.analytic_account_id.id or False,
-                    #'tax_code_id': line.salary_rule_id.account_tax_id and line.salary_rule_id.account_tax_id.id or False,  
-                    #'tax_amount': line.salary_rule_id.account_tax_id and amt or 0.0,
-                })
-                    move_line_ids.append(credit_line)
-                    credit_sum += credit_line[2]['credit'] - credit_line[2]['debit']
+                        credit_line = (0, 0, {
+                        #'name': line.name,
+                        'name': line.motivo_modifica,
+                        'date': timenow,
+                        'partner_id': slip.partner_id.id,
+                        'account_id': credit_account_id,
+                        'journal_id': slip.journal_id.id,
+                        'period_id': period_id,
+                        'debit': amt < 0.0 and -amt or 0.0,
+                        'credit': amt > 0.0 and amt or 0.0,
+                        #'analytic_account_id': line.salary_rule_id.analytic_account_id and line.salary_rule_id.analytic_account_id.id or False,
+                        #'tax_code_id': line.salary_rule_id.account_tax_id and line.salary_rule_id.account_tax_id.id or False,  
+                        #'tax_amount': line.salary_rule_id.account_tax_id and amt or 0.0,
+                    })
+                        move_line_ids.append(credit_line)
+                        credit_sum += credit_line[2]['credit'] - credit_line[2]['debit']
                 if debit_account_id:
                     amtd = credit_sum 
                     debit_line = (0, 0, {
@@ -284,7 +286,7 @@ class ecua_ndc_purchase(osv.osv):
                     #'tax_code_id': line.salary_rule_id.account_tax_id and line.salary_rule_id.account_tax_id.id or False,
                     #'tax_amount': line.salary_rule_id.account_tax_id and amt or 0.0,
                 })
-                    move_line_ids.append(credit_line)
+                    move_line_ids.append(debit_line)
                     debit_sum += debit_line[2]['debit'] - debit_line[2]['credit']
             if debit_sum > credit_sum:
                 acc_id = slip.journal_id.default_credit_account_id.id
@@ -355,7 +357,7 @@ class ecua_ndc_purchase(osv.osv):
 ecua_ndc_purchase()
 
 class ecua_ndc_purchase_line(osv.osv):
-    _name = 'ecua.purchase_ndc_line' 
+    _name = 'ecua.ndc_purchase_line' 
     _description = 'Lineas de la Nota de credito'
     _columns = {
                 'name':fields.char('Nombre', size=64, readonly=False),

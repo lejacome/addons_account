@@ -45,7 +45,7 @@ class ecua_ndd_purchase(osv.osv):
 
     _columns = {
                  'document_id': fields.many2one('documentos.complementarios','Document',ondelete='cascade'),
-                 'ndd_line_ids':fields.one2many('ecua.ndd_line','ecua_ndd_id','Lineas N. Debito'),               
+                 'ndd_line_ids':fields.one2many('ecua.ndd_purchase_line','ecua_ndd_id','Lineas N. Debito'),               
                  'ndd_concept':fields.selection([
                 ('error','Error de Facturacion'),
                 ('interes','Intereses'),
@@ -220,7 +220,7 @@ class ecua_ndd_purchase(osv.osv):
 
             #default_partner_id = slip.employee_id.address_home_id.id
             #name = _('Payslip of %s') % (slip.partner_id.name) #employee_id
-            name = ('Nota de Debito por %s') % (slip.ndc_concept)
+            name = ('Nota de Debito por %s') % (slip.ndd_concept)
             move = {
                 'narration': name,
                 'date': timenow,
@@ -228,7 +228,7 @@ class ecua_ndd_purchase(osv.osv):
                 'journal_id': slip.journal_id.id,
                 'period_id': period_id,
             }
-            for line in slip.ndc_line_ids:
+            for line in slip.ndd_line_ids:
                 amt_tax = 0.0
                 amt = slip.valor_total and -line.valor_modifica or line.valor_modifica
                 amtc = 0.0
@@ -368,7 +368,7 @@ class ecua_ndd_purchase(osv.osv):
 ecua_ndd_purchase()
 
 class ecua_ndd_purchase_line(osv.osv):
-    _name = 'ecua.ndd_line' 
+    _name = 'ecua.ndd_purchase_line' 
     _description = 'Lineas de la Nota de debito'
     _columns = {
                 'name':fields.char('Nombre', size=64, readonly=False),
