@@ -18,6 +18,7 @@
             <field name="autoriza_date_emision" string="Emitido"/>
             <field name="autoriza_date_expire" string="Expira"/>
             <field name="ndd_concept"/>
+            <field name="state"/>
             <field name="audit" invisible="0"/>
        </tree>
        </field>
