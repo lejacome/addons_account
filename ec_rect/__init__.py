@@ -20,6 +20,8 @@
 import doc_complements
 import ndc
 import ndd
+import ndc_purchase
+import ndd_purchase
 import retencion
 import invoice
 import voucher
